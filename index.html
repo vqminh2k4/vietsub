@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VietDub - Dịch video sang tiếng Việt với âm thanh tự động. Upload video, nhận dạng giọng nói, dịch thuật và tạo âm thanh tiếng Việt.">
+    <meta name="keywords" content="dịch video, tiếng Việt, phụ đề, lồng tiếng, video translation, Vietnamese dubbing">
+    <title>VietDub — Dịch Video Sang Tiếng Việt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <div class="logo" id="logo">
+                <svg class="logo-icon" width="36" height="36" viewBox="0 0 36 36" fill="none">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36">
+                            <stop offset="0%" stop-color="#7c3aed"/>
+                            <stop offset="100%" stop-color="#06b6d4"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="36" height="36" rx="10" fill="url(#logoGrad)"/>
+                    <path d="M10 12 L16 18 L10 24" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18 24 H26" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+                <span class="logo-text">Viet<span class="logo-highlight">Dub</span></span>
+            </div>
+            <nav class="nav">
+                <span class="nav-badge" id="browserBadge">
+                    <span class="badge-dot"></span>
+                    <span id="browserStatus">Đang kiểm tra...</span>
+                </span>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main" id="main">
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="upload-hero">
+                <h1 class="hero-title">
+                    Dịch Video Sang
+                    <span class="gradient-text">Tiếng Việt</span>
+                </h1>
+                <p class="hero-subtitle">Upload video → Nhận dạng giọng nói → Dịch tự động → Phát âm thanh tiếng Việt</p>
+            </div>
+
+            <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Kéo thả hoặc click để chọn video">
+                <div class="upload-icon">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="30" stroke="url(#uploadGrad)" stroke-width="2" stroke-dasharray="8 4"/>
+                        <defs>
+                            <linearGradient id="uploadGrad" x1="0" y1="0" x2="64" y2="64">
+                                <stop offset="0%" stop-color="#7c3aed"/>
+                                <stop offset="100%" stop-color="#06b6d4"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M32 20V44M24 28L32 20L40 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <p class="upload-text">Kéo thả video vào đây</p>
+                <p class="upload-subtext">hoặc <span class="upload-link">click để chọn file</span></p>
+                <p class="upload-formats">Hỗ trợ: MP4, WebM, OGG, MOV</p>
+                <input type="file" id="fileInput" accept="video/*" hidden>
+            </div>
+
+            <!-- Features -->
+            <div class="features">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🎙️</div>
+                    <h3>Nhận Dạng Giọng Nói</h3>
+                    <p>Tự động chuyển âm thanh thành văn bản với Web Speech API</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Dịch Tự Động</h3>
+                    <p>Dịch nội dung sang tiếng Việt chính xác và tự nhiên</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🔊</div>
+                    <h3>Giọng Đọc Tiếng Việt</h3>
+                    <p>Phát âm thanh tiếng Việt đồng bộ với video gốc</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workspace Section (hidden initially) -->
+        <section class="workspace" id="workspace" hidden>
+            <div class="workspace-grid">
+                <!-- Video Player -->
+                <div class="video-container" id="videoContainer">
+                    <video id="videoPlayer" crossorigin="anonymous">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="subtitle-overlay" id="subtitleOverlay">
+                        <p class="subtitle-original" id="subtitleOriginal"></p>
+                        <p class="subtitle-vietnamese" id="subtitleVietnamese"></p>
+                    </div>
+                    <div class="video-controls" id="videoControls">
+                        <button class="btn-icon" id="btnPlayPause" title="Phát/Dừng">
+                            <svg class="icon-play" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M6 4L16 10L6 16V4Z"/>
+                            </svg>
+                            <svg class="icon-pause" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" hidden>
+                                <path d="M5 4H8V16H5zM12 4H15V16H12z"/>
+                            </svg>
+                        </button>
+                        <div class="video-progress" id="videoProgress">
+                            <div class="video-progress-fill" id="videoProgressFill"></div>
+                        </div>
+                        <span class="video-time" id="videoTime">0:00 / 0:00</span>
+                        <button class="btn-icon" id="btnMuteOriginal" title="Tắt/Bật âm thanh gốc">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 3L5 7H2V13H5L10 17V3Z"/>
+                                <path class="sound-wave" d="M13 7C14.5 8.5 14.5 11.5 13 13M15 5C18 8 18 12 15 15" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Control Panel -->
+                <div class="control-panel" id="controlPanel">
+                    <h2 class="panel-title">⚙️ Bảng Điều Khiển</h2>
+
+                    <!-- File info -->
+                    <div class="file-info" id="fileInfo">
+                        <div class="file-name" id="fileName">video.mp4</div>
+                        <div class="file-meta" id="fileMeta">0 MB • 0:00</div>
+                    </div>
+
+                    <!-- Language Selection -->
+                    <div class="control-group">
+                        <label class="control-label" for="sourceLang">Ngôn ngữ gốc</label>
+                        <select class="select-input" id="sourceLang">
+                            <option value="en-US">🇺🇸 English (US)</option>
+                            <option value="en-GB">🇬🇧 English (UK)</option>
+                            <option value="ja">🇯🇵 日本語 (Japanese)</option>
+                            <option value="ko">🇰🇷 한국어 (Korean)</option>
+                            <option value="zh-CN">🇨🇳 中文 (Chinese)</option>
+                            <option value="fr">🇫🇷 Français (French)</option>
+                            <option value="de">🇩🇪 Deutsch (German)</option>
+                            <option value="es">🇪🇸 Español (Spanish)</option>
+                            <option value="th">🇹🇭 ไทย (Thai)</option>
+                            <option value="ru">🇷🇺 Русский (Russian)</option>
+                            <option value="pt">🇵🇹 Português (Portuguese)</option>
+                            <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+                        </select>
+                    </div>
+
+                    <!-- Voice Selection -->
+                    <div class="control-group">
+                        <label class="control-label" for="vnVoice">Giọng đọc tiếng Việt</label>
+                        <select class="select-input" id="vnVoice">
+                            <option value="default">Mặc định</option>
+                        </select>
+                    </div>
+
+                    <!-- Speech Rate -->
+                    <div class="control-group">
+                        <label class="control-label">Tốc độ đọc: <span id="rateValue">1.0x</span></label>
+                        <input type="range" class="range-input" id="speechRate" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="btn btn-primary glow-effect" id="btnStartProcess">
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                                <path d="M9 1L11 7H17L12 11L14 17L9 13L4 17L6 11L1 7H7L9 1Z"/>
+                            </svg>
+                            Bắt Đầu Dịch
+                        </button>
+                        <button class="btn btn-secondary" id="btnPlayVN" disabled>
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                                <path d="M4 2L15 9L4 16V2Z"/>
+                            </svg>
+                            Phát Giọng Việt
+                        </button>
+                        <button class="btn btn-secondary" id="btnExportSRT" disabled>
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M3 13V15H15V13M9 3V11M6 8L9 11L12 8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Xuất Phụ Đề SRT
+                        </button>
+                        <button class="btn btn-secondary" id="btnNewVideo">
+                            🔄 Video Mới
+                        </button>
+                    </div>
+
+                    <!-- Processing Status -->
+                    <div class="processing-status" id="processingStatus" hidden>
+                        <div class="status-header">
+                            <span class="status-badge processing" id="statusBadge">
+                                <span class="badge-dot"></span>
+                                <span id="statusText">Đang xử lý...</span>
+                            </span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="status-detail" id="statusDetail">Đang chuẩn bị...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transcript Section -->
+            <div class="transcript-section" id="transcriptSection">
+                <div class="transcript-header">
+                    <h2 class="panel-title">📝 Bản Dịch</h2>
+                    <div class="transcript-actions">
+                        <button class="btn btn-icon" id="btnToggleEdit" title="Chỉnh sửa">✏️</button>
+                        <button class="btn btn-icon" id="btnClearTranscript" title="Xóa tất cả">🗑️</button>
+                    </div>
+                </div>
+
+                <div class="transcript-grid">
+                    <!-- Original Text -->
+                    <div class="transcript-column">
+                        <h3 class="column-title">Văn bản gốc</h3>
+                        <div class="segment-list" id="segmentListOriginal">
+                            <div class="empty-state">
+                                <p>Chưa có nội dung. Nhấn "Bắt Đầu Dịch" để bắt đầu.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vietnamese Translation -->
+                    <div class="transcript-column">
+                        <h3 class="column-title">Bản dịch Tiếng Việt</h3>
+                        <div class="segment-list" id="segmentListVietnamese">
+                            <div class="empty-state">
+                                <p>Bản dịch sẽ hiển thị ở đây.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>VietDub — Dịch video sang tiếng Việt miễn phí | Sử dụng Web Speech API & MyMemory Translation</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
