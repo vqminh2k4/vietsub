@@ -885,117 +885,89 @@
     }
 
     function fallbackTTS(text, resolve) {
-        if (!state.synth) { resolve(); return; }
-        // KHÔNG cancel toàn bộ queue — chỉ phát câu hiện tại
-        // Nếu synth đang nói, chờ nó xong rồi mới phát tiếp (dùng queue tự nhiên)
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'vi-VN';
-        utterance.rate = parseFloat(state.speechRate) || 1;
-        utterance.pitch = els.animeVoiceToggle.checked ? 1.5 : 1;
-        utterance.volume = 1;
-
-        // Luôn dùng giọng nữ đã chọn
-        if (state.selectedVoice) {
-            utterance.voice = state.selectedVoice;
-        }
-
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
-
-        state.synth.speak(utterance);
+        // Fallback cuối cùng: Google TTS giọng nữ (khi Applio chưa bật)
+        const ttsUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
+        const audio = new Audio(ttsUrl);
+        audio.playbackRate = parseFloat(state.speechRate) || 1;
+        
+        state.currentAudio = audio;
+        audio.onended = () => { state.currentAudio = null; resolve(); };
+        audio.onerror = () => {
+            // Cuối cùng dùng Web Speech (giọng nữ đã chọn)
+            if (!state.synth) { resolve(); return; }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'vi-VN';
+            utterance.rate = parseFloat(state.speechRate) || 1;
+            utterance.pitch = 1.2;
+            utterance.volume = 1;
+            if (state.selectedVoice) utterance.voice = state.selectedVoice;
+            utterance.onend = () => resolve();
+            utterance.onerror = () => resolve();
+            state.synth.speak(utterance);
+        };
+        audio.play().catch(() => audio.onerror());
     }
 
     function speakVietnamese(text) {
         return new Promise(async (resolve) => {
             let resolved = false;
-            const safeResolve = () => {
-                if (!resolved) {
-                    resolved = true;
-                    resolve();
-                }
-            };
-
-            let fallbackTriggered = false;
-            const triggerFallback = (reason) => {
-                if (fallbackTriggered) return;
-                fallbackTriggered = true;
-                console.warn("Lùi về giọng hệ thống (Nam) do:", reason);
-                fallbackTTS(text, safeResolve);
-            };
+            const safeResolve = () => { if (!resolved) { resolved = true; resolve(); } };
 
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
             }
 
-            const isAnimeMode = els.animeVoiceToggle.checked;
-            const ttsBackend = localStorage.getItem('ttsBackend') || 'fish';
+            const ttsBackend = localStorage.getItem('ttsBackend') || 'local';
+            const localApiUrl = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:6969';
             const fishApiKey = localStorage.getItem('fishApiKey');
-            const localApiUrl = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:5000/tts';
 
             try {
-                let audioUrl = '';
-                let isPremiumAudio = false;
+                let audioUrl = null;
 
-                if (isAnimeMode) {
-                    if (ttsBackend === 'fish' && fishApiKey) {
-                        try {
-                            audioUrl = await getFishAudioStream(text, fishApiKey);
-                            isPremiumAudio = true;
-                        } catch (e) {
-                            console.warn("Lỗi gọi Fish Audio, lùi về Google TTS", e);
-                        }
-                    } else if (ttsBackend === 'local') {
-                        try {
-                            audioUrl = await getLocalAudioStream(text, localApiUrl);
-                            isPremiumAudio = true;
-                        } catch (e) {
-                            console.warn("Lỗi gọi Local API, lùi về Google TTS", e);
-                        }
+                // Ưu tiên 1: Kurumi Local AI (Applio)
+                if (ttsBackend === 'local') {
+                    try {
+                        audioUrl = await getLocalAudioStream(text, localApiUrl);
+                    } catch (e) {
+                        console.warn('⚠️ Applio chưa bật hoặc lỗi, lùi về Google TTS:', e.message);
                     }
                 }
-                
-                if (!isPremiumAudio) {
-                    audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
+
+                // Ưu tiên 2: Fish Audio
+                if (!audioUrl && ttsBackend === 'fish' && fishApiKey) {
+                    try {
+                        audioUrl = await getFishAudioStream(text, fishApiKey);
+                    } catch (e) {
+                        console.warn('⚠️ Fish Audio lỗi, lùi về Google TTS:', e.message);
+                    }
                 }
 
-                // Google TTS has a limit. Fallback if extremely long.
-                if (!isPremiumAudio && text.length > 300) {
-                    return triggerFallback("Câu quá dài (>300 ký tự) cho Google TTS");
-                }
-
-                const audio = new Audio(audioUrl);
-                
-                if (isAnimeMode && !isPremiumAudio) {
-                    // Hack: Tăng tốc độ và giảm preservesPitch để âm thanh the thé lên (Anime loli)
-                    audio.playbackRate = (parseFloat(state.speechRate) || 1) * 1.35;
-                    if ('preservesPitch' in audio) audio.preservesPitch = false;
-                    if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
-                    if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
-                } else if (!isPremiumAudio) {
+                // Nếu có audio từ AI (Kurumi hoặc Fish)
+                if (audioUrl) {
+                    const audio = new Audio(audioUrl);
                     audio.playbackRate = parseFloat(state.speechRate) || 1;
+                    state.currentAudio = audio;
+
+                    audio.onended = () => {
+                        state.currentAudio = null;
+                        URL.revokeObjectURL(audioUrl);
+                        safeResolve();
+                    };
+                    audio.onerror = () => {
+                        console.warn('Lỗi phát audio Kurumi, lùi về Google TTS');
+                        fallbackTTS(text, safeResolve);
+                    };
+                    audio.play().catch(() => fallbackTTS(text, safeResolve));
+                    return;
                 }
-                
-                state.currentAudio = audio;
-                
-                audio.onended = () => {
-                    state.currentAudio = null;
-                    if (isPremiumAudio) URL.revokeObjectURL(audioUrl); // Dọn dẹp RAM
-                    safeResolve();
-                };
-                
-                audio.onerror = () => {
-                    triggerFallback("Không thể tải âm thanh online (Lỗi 403/404)");
-                };
-                
-                audio.play().catch(e => {
-                    triggerFallback("Trình duyệt chặn phát âm thanh (" + e.message + ")");
-                });
+
+                // Dự phòng: Google TTS giọng nữ
+                fallbackTTS(text, safeResolve);
 
             } catch (error) {
                 console.error(error);
-                triggerFallback("Lỗi hệ thống Catch block");
+                fallbackTTS(text, safeResolve);
             }
         });
     }
