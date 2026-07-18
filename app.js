@@ -818,74 +818,19 @@
     }
 
     async function getLocalAudioStream(text, localUrl) {
-        // Applio Gradio API (/run/enforce_terms)
-        const baseUrl = localUrl.replace(/\/$/, ""); // Remove trailing slash
-        let apiUrl = baseUrl;
-        
-        // Auto-fix URL if user just entered http://127.0.0.1:6969
-        if (!apiUrl.includes("/run/enforce_terms") && !apiUrl.includes("/api/predict")) {
-            apiUrl = baseUrl + "/run/enforce_terms";
-        }
-
-        const payload = {
-            data: [
-                true, // terms_checkbox
-                "",   // input_tts_path
-                text, // tts_text
-                "vi-VN-HoaiMyNeural", // tts_voice
-                0,    // tts_rate
-                els.animeVoiceToggle.checked ? 6 : 0, // pitch (pitch up slightly for anime)
-                0.75, // index_rate
-                1,    // rms_mix_rate
-                0.5,  // protect
-                "rmvpe", // f0_method
-                "",   // output_tts_path
-                "",   // output_rvc_path
-                "Kurumi.pth", // model_file (User must put this in logs)
-                "added_IVF354_Flat_nprobe_1_Kurumi_v2.index", // index_file
-                false, // split_audio
-                false, // autotune
-                1,     // autotune_strength
-                false, // proposed_pitch
-                0.9,   // proposed_pitch_threshold
-                false, // clean_audio
-                0.7,   // clean_strength
-                "mp3", // export_format
-                "contentvec", // embedder_model
-                "",    // embedder_model_custom
-                0      // sid
-            ]
-        };
-
-        const response = await fetch(apiUrl, {
+        // G\u1ecdi Kurumi Server (run-kurumi-server.bat)
+        // API \u0111\u01a1n gi\u1ea3n: POST {"text":"..."} \u2192 tr\u1ea3 v\u1ec1 file WAV
+        const baseUrl = localUrl.replace(/\/$/, '');
+        const response = await fetch(baseUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
         });
-
         if (!response.ok) {
-            throw new Error(`Applio Local API Error: ${response.status}`);
+            const err = await response.text().catch(() => response.status);
+            throw new Error(`Kurumi Server l\u1ed7i: ${err}`);
         }
-        
-        const result = await response.json();
-        
-        // Gradio returns { data: ["Success message", { name: "/path/to/file.mp3", ... }] }
-        if (!result.data || !result.data[1] || !result.data[1].name) {
-            console.error("Lỗi parse API Applio:", result);
-            throw new Error("Không nhận được file âm thanh từ Applio");
-        }
-
-        const audioFilePath = result.data[1].name;
-        // Fetch the actual audio file from Gradio's /file= endpoint
-        const audioResponse = await fetch(`${baseUrl}/file=${audioFilePath}`);
-        
-        if (!audioResponse.ok) {
-            throw new Error("Không thể tải file âm thanh từ Gradio server");
-        }
-
-        const blob = await audioResponse.blob();
+        const blob = await response.blob();
         return URL.createObjectURL(blob);
     }
 
