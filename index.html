@@ -154,7 +154,15 @@
 
                 <!-- Control Panel -->
                 <div class="control-panel" id="controlPanel">
-                    <h2 class="panel-title">⚙️ Bảng Điều Khiển</h2>
+                    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 class="panel-title" style="margin-bottom: 0;">⚙️ Bảng Điều Khiển</h2>
+                        <button class="btn-icon" id="btnSettings" title="Cài đặt hệ thống" style="padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </button>
+                    </div>
 
                     <!-- File info -->
                     <div class="file-info" id="fileInfo">
@@ -191,10 +199,10 @@
 
                     <!-- Anime Voice Hack -->
                     <div class="control-group checkbox-group">
-                        <label class="checkbox-label" title="Tăng cao độ (pitch) để tạo giọng the thé giống anime">
+                        <label class="checkbox-label" title="Dùng API Fish Audio (Giọng Kurumi) nếu đã nhập API Key">
                             <input type="checkbox" id="animeVoiceToggle">
                             <span class="custom-checkbox"></span>
-                            Giọng Nữ Anime (Giả lập) 🌸
+                            Giọng Kurumi Tokisaki (Fish Audio) 🌸
                         </label>
                     </div>
 
@@ -282,6 +290,28 @@
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal" hidden>
+        <div class="modal">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0; color: var(--color-primary);">⚙️ Cài đặt hệ thống</h3>
+                <button class="btn-icon" id="btnCloseSettings" style="background: none;">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="control-group">
+                    <label class="control-label">Fish Audio API Key</label>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
+                        Để dùng giọng Kurumi, lấy API Key miễn phí tại <a href="https://fish.audio/app/api-keys/" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Fish Audio</a>
+                    </p>
+                    <input type="password" id="fishApiKeyInput" class="select-input" placeholder="Dán mã API Key của bạn vào đây..." style="width: 100%; margin-bottom: 1rem;">
+                </div>
+            </div>
+            <div class="modal-footer" style="text-align: right;">
+                <button class="btn btn-primary" id="btnSaveSettings">Lưu cài đặt</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">

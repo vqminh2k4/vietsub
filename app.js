@@ -148,6 +148,13 @@
         urlInput: $('#urlInput'),
         btnUrlSubmit: $('#btnUrlSubmit'),
 
+        // Settings
+        btnSettings: $('#btnSettings'),
+        settingsModal: $('#settingsModal'),
+        btnCloseSettings: $('#btnCloseSettings'),
+        fishApiKeyInput: $('#fishApiKeyInput'),
+        btnSaveSettings: $('#btnSaveSettings'),
+
         // Anime Hack
         animeVoiceToggle: $('#animeVoiceToggle'),
     };
@@ -191,6 +198,29 @@
             toast.classList.add('toast-exit');
             setTimeout(() => toast.remove(), 300);
         }, CONFIG.TOAST_DURATION);
+
+        // Settings Modal
+        els.btnSettings.addEventListener('click', () => {
+            const savedKey = localStorage.getItem('fishApiKey') || '';
+            els.fishApiKeyInput.value = savedKey;
+            els.settingsModal.hidden = false;
+        });
+
+        els.btnCloseSettings.addEventListener('click', () => {
+            els.settingsModal.hidden = true;
+        });
+
+        els.btnSaveSettings.addEventListener('click', () => {
+            const key = els.fishApiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('fishApiKey', key);
+                showToast('Đã lưu API Key!', 'success');
+            } else {
+                localStorage.removeItem('fishApiKey');
+                showToast('Đã xóa API Key!', 'success');
+            }
+            els.settingsModal.hidden = true;
+        });
     }
 
     // ─── Browser Compatibility Check ─────────────────────────────────
@@ -733,45 +763,89 @@
     }
 
     // ─── Text-to-Speech (Vietnamese) ─────────────────────────────────
+    async function getFishAudioStream(text, apiKey) {
+        const response = await fetch('https://api.fish.audio/v1/tts', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: text,
+                reference_id: "86ad223631bc4d278c2bbb780bb60d31"
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Fish Audio Error: ${response.status}`);
+        }
+        
+        // Trả về blob URL
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+    }
+
     function speakVietnamese(text) {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
             }
 
             const isAnimeMode = els.animeVoiceToggle.checked;
+            const fishApiKey = localStorage.getItem('fishApiKey');
 
-            // Xóa sổ giọng nam của hệ thống, 100% dùng Google Translate (Giọng Nữ)
-            const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
-            const audio = new Audio(url);
-            
-            if (isAnimeMode) {
-                // Hack: Tăng tốc độ và giảm preservesPitch để âm thanh the thé lên (Anime loli)
-                audio.playbackRate = state.speechRate * 1.35;
-                if ('preservesPitch' in audio) audio.preservesPitch = false;
-                if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
-                if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
-            } else {
-                audio.playbackRate = state.speechRate;
+            try {
+                let audioUrl = '';
+                let isFishAudio = false;
+
+                if (isAnimeMode && fishApiKey) {
+                    try {
+                        audioUrl = await getFishAudioStream(text, fishApiKey);
+                        isFishAudio = true;
+                    } catch (e) {
+                        console.warn("Lỗi gọi Fish Audio, lùi về Google TTS", e);
+                        audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
+                    }
+                } else {
+                    audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
+                }
+
+                const audio = new Audio(audioUrl);
+                
+                if (isAnimeMode && !isFishAudio) {
+                    // Hack: Tăng tốc độ và giảm preservesPitch để âm thanh the thé lên (Anime loli)
+                    audio.playbackRate = state.speechRate * 1.35;
+                    if ('preservesPitch' in audio) audio.preservesPitch = false;
+                    if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
+                    if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
+                } else if (!isFishAudio) {
+                    audio.playbackRate = state.speechRate;
+                }
+                // Nếu là Fish Audio, giữ nguyên vì nó đã là giọng Kurumi chuẩn
+                
+                state.currentAudio = audio;
+                
+                audio.onended = () => {
+                    state.currentAudio = null;
+                    if (isFishAudio) URL.revokeObjectURL(audioUrl); // Dọn dẹp RAM
+                    resolve();
+                };
+                
+                audio.onerror = () => {
+                    console.warn("Lỗi tải âm thanh, bỏ qua đọc câu này.");
+                    resolve();
+                };
+                
+                audio.play().catch(e => {
+                    console.warn("Lỗi phát âm thanh:", e);
+                    resolve();
+                });
+
+            } catch (error) {
+                console.error(error);
+                resolve();
             }
-            
-            state.currentAudio = audio;
-            
-            audio.onended = () => {
-                state.currentAudio = null;
-                resolve();
-            };
-            
-            audio.onerror = () => {
-                console.warn("Lỗi tải Google TTS, bỏ qua đọc câu này.");
-                resolve();
-            };
-            
-            audio.play().catch(e => {
-                console.warn("Lỗi phát âm thanh:", e);
-                resolve();
-            });
         });
     }
 
