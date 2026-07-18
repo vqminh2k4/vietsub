@@ -952,13 +952,11 @@
         state.isVNPlaying = !state.isVNPlaying;
 
         if (!state.isVNPlaying) {
-            // ── Dừng ──
+            // Dừng
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
             }
-            // Bật lại âm thanh gốc
-            els.videoPlayer.muted = false;
             els.videoPlayer.pause();
             els.btnPlayVN.innerHTML = `
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
@@ -1005,7 +1003,6 @@
         }
 
         state.isVNPlaying = false;
-        els.videoPlayer.muted = false;
         els.videoPlayer.pause();
         els.btnPlayVN.innerHTML = `
             <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
