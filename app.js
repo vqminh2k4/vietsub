@@ -97,6 +97,10 @@
 
         // Toast
         toastContainer: $('#toastContainer'),
+
+        // URL Input
+        urlInput: $('#urlInput'),
+        btnUrlSubmit: $('#btnUrlSubmit'),
     };
 
     // ─── Utilities ───────────────────────────────────────────────────
@@ -230,21 +234,203 @@
         state.videoURL = URL.createObjectURL(file);
         state.segments = [];
 
-        // Show workspace
-        els.uploadSection.hidden = true;
-        els.workspace.hidden = false;
-        els.workspace.classList.add('slide-up');
-
-        // Setup video
-        els.videoPlayer.src = state.videoURL;
-        els.fileName.textContent = file.name;
-        els.fileMeta.textContent = `${formatFileSize(file.size)}`;
+        showWorkspace(file.name, formatFileSize(file.size));
 
         els.videoPlayer.addEventListener('loadedmetadata', () => {
             els.fileMeta.textContent = `${formatFileSize(file.size)} • ${formatTime(els.videoPlayer.duration)}`;
         }, { once: true });
 
         showToast(`Đã tải video: ${file.name}`, 'success');
+    }
+
+    function showWorkspace(name, meta) {
+        els.uploadSection.hidden = true;
+        els.workspace.hidden = false;
+        els.workspace.classList.add('slide-up');
+
+        els.videoPlayer.src = state.videoURL;
+        els.fileName.textContent = name;
+        els.fileMeta.textContent = meta || '';
+    }
+
+    // ─── URL Video Handler ───────────────────────────────────────────
+    function detectPlatform(url) {
+        if (/youtube\.com|youtu\.be/i.test(url)) return 'YouTube';
+        if (/tiktok\.com/i.test(url)) return 'TikTok';
+        if (/instagram\.com/i.test(url)) return 'Instagram';
+        if (/facebook\.com|fb\.watch/i.test(url)) return 'Facebook';
+        if (/twitter\.com|x\.com/i.test(url)) return 'Twitter/X';
+        return 'Video';
+    }
+
+    function showUrlLoading(platform) {
+        const overlay = document.createElement('div');
+        overlay.className = 'url-loading-overlay';
+        overlay.id = 'urlLoadingOverlay';
+        overlay.innerHTML = `
+            <div class="url-loading-card">
+                <div class="spinner-large"></div>
+                <h3>Đang tải video từ ${platform}...</h3>
+                <p>Vui lòng đợi trong giây lát</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    function hideUrlLoading() {
+        const overlay = document.getElementById('urlLoadingOverlay');
+        if (overlay) overlay.remove();
+    }
+
+    async function handleUrlSubmit() {
+        const url = els.urlInput.value.trim();
+        if (!url) {
+            showToast('Vui lòng nhập link video.', 'warning');
+            els.urlInput.focus();
+            return;
+        }
+
+        // Validate URL
+        try { new URL(url); } catch {
+            showToast('Link không hợp lệ. Vui lòng kiểm tra lại.', 'error');
+            return;
+        }
+
+        const platform = detectPlatform(url);
+        showUrlLoading(platform);
+
+        try {
+            // Try Cobalt API (open-source video downloader)
+            const videoBlob = await downloadViaCobalt(url);
+
+            if (videoBlob) {
+                state.videoURL = URL.createObjectURL(videoBlob);
+                state.videoFile = new File([videoBlob], `${platform}_video.mp4`, { type: 'video/mp4' });
+                state.segments = [];
+
+                hideUrlLoading();
+                showWorkspace(`${platform} Video`, formatFileSize(videoBlob.size));
+
+                els.videoPlayer.addEventListener('loadedmetadata', () => {
+                    els.fileMeta.textContent = `${formatFileSize(videoBlob.size)} • ${formatTime(els.videoPlayer.duration)}`;
+                }, { once: true });
+
+                showToast(`Đã tải video từ ${platform}!`, 'success');
+                return;
+            }
+        } catch (err) {
+            console.warn('Cobalt API error:', err);
+        }
+
+        // Fallback: try direct URL (for direct video links)
+        try {
+            const resp = await fetch(url, { method: 'HEAD', mode: 'cors' });
+            const contentType = resp.headers.get('content-type') || '';
+            if (contentType.startsWith('video/')) {
+                state.videoURL = url;
+                state.segments = [];
+                hideUrlLoading();
+                showWorkspace(`${platform} Video`, '');
+                showToast(`Đã tải video từ link trực tiếp!`, 'success');
+                return;
+            }
+        } catch (e) {
+            console.warn('Direct URL failed:', e);
+        }
+
+        hideUrlLoading();
+
+        // Show helpful instructions
+        showToast(
+            `Không thể tải tự động từ ${platform}. Hãy tải video về máy trước rồi upload lên.`,
+            'warning'
+        );
+        showDownloadGuide(platform, url);
+    }
+
+    async function downloadViaCobalt(url) {
+        // List of public Cobalt API instances
+        const cobaltAPIs = [
+            'https://api.cobalt.tools',
+        ];
+
+        for (const apiBase of cobaltAPIs) {
+            try {
+                const resp = await fetch(`${apiBase}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        downloadMode: 'auto',
+                        filenameStyle: 'basic',
+                    }),
+                });
+
+                if (!resp.ok) continue;
+
+                const data = await resp.json();
+
+                if (data.status === 'tunnel' || data.status === 'redirect') {
+                    const downloadUrl = data.url;
+                    if (downloadUrl) {
+                        const videoResp = await fetch(downloadUrl);
+                        if (videoResp.ok) {
+                            return await videoResp.blob();
+                        }
+                    }
+                }
+
+                if (data.status === 'picker' && data.picker?.length > 0) {
+                    // Get the first video option
+                    const videoOption = data.picker.find(p => p.type === 'video') || data.picker[0];
+                    if (videoOption?.url) {
+                        const videoResp = await fetch(videoOption.url);
+                        if (videoResp.ok) {
+                            return await videoResp.blob();
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn(`Cobalt API ${apiBase} failed:`, e);
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    function showDownloadGuide(platform, url) {
+        const guides = {
+            'YouTube': {
+                steps: [
+                    'Cách 1: Thêm "ss" trước youtube.com → ssyoutube.com/...',
+                    'Cách 2: Dùng trang cobalt.tools — dán link và tải',
+                    'Cách 3: Dùng ứng dụng yt-dlp trên máy tính',
+                ],
+            },
+            'TikTok': {
+                steps: [
+                    'Cách 1: Dùng trang snaptik.app — dán link TikTok',
+                    'Cách 2: Dùng trang cobalt.tools — dán link và tải',
+                    'Cách 3: Trong app TikTok → Chia sẻ → Lưu video',
+                ],
+            },
+        };
+
+        const guide = guides[platform] || {
+            steps: [
+                'Dùng trang cobalt.tools — dán link video và tải về',
+                'Sau đó upload file video lên VietDub',
+            ],
+        };
+
+        // Show guide as a toast sequence
+        guide.steps.forEach((step, i) => {
+            setTimeout(() => showToast(step, 'info'), (i + 1) * 800);
+        });
     }
 
     // ─── Video Player Controls ───────────────────────────────────────
@@ -742,6 +928,12 @@
         els.btnStartProcess.addEventListener('click', startProcessing);
         els.btnPlayVN.addEventListener('click', playVietnameseAudio);
         els.btnExportSRT.addEventListener('click', exportSRT);
+
+        // URL submit
+        els.btnUrlSubmit.addEventListener('click', handleUrlSubmit);
+        els.urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleUrlSubmit();
+        });
 
         els.btnNewVideo.addEventListener('click', () => {
             // Reset everything

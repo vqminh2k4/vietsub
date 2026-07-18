@@ -69,6 +69,35 @@
                 <input type="file" id="fileInput" accept="video/*" hidden>
             </div>
 
+            <!-- Separator -->
+            <div class="upload-separator">
+                <span class="separator-line"></span>
+                <span class="separator-text">HOẶC</span>
+                <span class="separator-line"></span>
+            </div>
+
+            <!-- URL Input -->
+            <div class="url-input-section" id="urlInputSection">
+                <div class="url-input-wrapper">
+                    <div class="url-icons">
+                        <span class="url-platform-icon" title="YouTube">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        </span>
+                        <span class="url-platform-icon" title="TikTok">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.87a8.28 8.28 0 0 0 4.76 1.5V6.93a4.84 4.84 0 0 1-1-.24z"/></svg>
+                        </span>
+                    </div>
+                    <input type="text" class="url-input" id="urlInput" placeholder="Dán link YouTube hoặc TikTok vào đây..." autocomplete="off">
+                    <button class="btn btn-primary url-submit-btn" id="btnUrlSubmit">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9h12M11 5l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Lấy Video
+                    </button>
+                </div>
+                <p class="url-hint">Hỗ trợ: youtube.com, youtu.be, tiktok.com, instagram.com</p>
+            </div>
+
             <!-- Features -->
             <div class="features">
                 <div class="feature-card fade-in">
