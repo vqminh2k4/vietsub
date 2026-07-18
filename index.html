@@ -188,13 +188,18 @@
                             <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
                         </select>
                     </div>
-
-                    <!-- Voice Selection -->
+                    <!-- Voice Status -->
                     <div class="control-group">
-                        <label class="control-label" for="vnVoice">Giọng đọc tiếng Việt</label>
-                        <select class="select-input" id="vnVoice">
-                            <option value="default">Mặc định</option>
-                        </select>
+                        <label class="control-label">Gi\u1ecdng \u0111\u1ecdc ti\u1ebfng Vi\u1ec7t</label>
+                        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;">
+                            <span style="font-size:18px;">🎙️</span>
+                            <div>
+                                <div style="color:#10b981;font-weight:600;font-size:13px;">Gi\u1ecdng N\u1eef (T\u1ef1 \u0111\u1ed9ng)</div>
+                                <div style="color:rgba(255,255,255,0.5);font-size:11px;">Kurumi AI (khi Applio b\u1eadt) · Google TTS n\u1eef (d\u1ef1 ph\u00f2ng)</div>
+                            </div>
+                        </div>
+                        <!-- Hidden select for compatibility -->
+                        <select class="select-input" id="vnVoice" style="display:none;"></select>
                     </div>
 
                     <!-- Anime Voice Hack -->
