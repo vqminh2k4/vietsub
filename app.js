@@ -805,20 +805,74 @@
     }
 
     async function getLocalAudioStream(text, localUrl) {
-        // Assume Local API accepts GET requests: http://127.0.0.1:5000/tts?text=...
-        // Or POST. We'll try GET first as it's common for simple TTS servers.
-        const url = new URL(localUrl);
-        url.searchParams.append('text', text);
+        // Applio Gradio API (/run/enforce_terms)
+        const baseUrl = localUrl.replace(/\/$/, ""); // Remove trailing slash
+        let apiUrl = baseUrl;
         
-        const response = await fetch(url.toString(), {
-            method: 'GET'
+        // Auto-fix URL if user just entered http://127.0.0.1:6969
+        if (!apiUrl.includes("/run/enforce_terms") && !apiUrl.includes("/api/predict")) {
+            apiUrl = baseUrl + "/run/enforce_terms";
+        }
+
+        const payload = {
+            data: [
+                true, // terms_checkbox
+                "",   // input_tts_path
+                text, // tts_text
+                "vi-VN-HoaiMyNeural", // tts_voice
+                0,    // tts_rate
+                els.animeVoiceToggle.checked ? 6 : 0, // pitch (pitch up slightly for anime)
+                0.75, // index_rate
+                1,    // rms_mix_rate
+                0.5,  // protect
+                "rmvpe", // f0_method
+                "",   // output_tts_path
+                "",   // output_rvc_path
+                "Kurumi.pth", // model_file (User must put this in logs)
+                "added_IVF354_Flat_nprobe_1_Kurumi_v2.index", // index_file
+                false, // split_audio
+                false, // autotune
+                1,     // autotune_strength
+                false, // proposed_pitch
+                0.9,   // proposed_pitch_threshold
+                false, // clean_audio
+                0.7,   // clean_strength
+                "mp3", // export_format
+                "contentvec", // embedder_model
+                "",    // embedder_model_custom
+                0      // sid
+            ]
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-            throw new Error(`Local API Error: ${response.status}`);
+            throw new Error(`Applio Local API Error: ${response.status}`);
         }
         
-        const blob = await response.blob();
+        const result = await response.json();
+        
+        // Gradio returns { data: ["Success message", { name: "/path/to/file.mp3", ... }] }
+        if (!result.data || !result.data[1] || !result.data[1].name) {
+            console.error("Lỗi parse API Applio:", result);
+            throw new Error("Không nhận được file âm thanh từ Applio");
+        }
+
+        const audioFilePath = result.data[1].name;
+        // Fetch the actual audio file from Gradio's /file= endpoint
+        const audioResponse = await fetch(`${baseUrl}/file=${audioFilePath}`);
+        
+        if (!audioResponse.ok) {
+            throw new Error("Không thể tải file âm thanh từ Gradio server");
+        }
+
+        const blob = await audioResponse.blob();
         return URL.createObjectURL(blob);
     }
 
@@ -828,8 +882,8 @@
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'vi-VN';
-        utterance.rate = state.speechRate;
-        utterance.pitch = 1;
+        utterance.rate = parseFloat(state.speechRate) || 1;
+        utterance.pitch = els.animeVoiceToggle.checked ? 1.5 : 1;
         utterance.volume = 1;
 
         if (state.selectedVoice) {
@@ -844,6 +898,22 @@
 
     function speakVietnamese(text) {
         return new Promise(async (resolve) => {
+            let resolved = false;
+            const safeResolve = () => {
+                if (!resolved) {
+                    resolved = true;
+                    resolve();
+                }
+            };
+
+            let fallbackTriggered = false;
+            const triggerFallback = (reason) => {
+                if (fallbackTriggered) return;
+                fallbackTriggered = true;
+                console.warn("Lùi về giọng hệ thống (Nam) do:", reason);
+                fallbackTTS(text, safeResolve);
+            };
+
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
@@ -880,22 +950,21 @@
                     audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
                 }
 
-                // Google TTS has a ~200 character limit. Fallback directly if text is too long.
-                if (!isPremiumAudio && text.length > 200) {
-                    console.warn("Câu quá dài đối với Google TTS, lùi về giọng mặc định của máy");
-                    return fallbackTTS(text, resolve);
+                // Google TTS has a limit. Fallback if extremely long.
+                if (!isPremiumAudio && text.length > 300) {
+                    return triggerFallback("Câu quá dài (>300 ký tự) cho Google TTS");
                 }
 
                 const audio = new Audio(audioUrl);
                 
                 if (isAnimeMode && !isPremiumAudio) {
                     // Hack: Tăng tốc độ và giảm preservesPitch để âm thanh the thé lên (Anime loli)
-                    audio.playbackRate = state.speechRate * 1.35;
+                    audio.playbackRate = (parseFloat(state.speechRate) || 1) * 1.35;
                     if ('preservesPitch' in audio) audio.preservesPitch = false;
                     if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
                     if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
                 } else if (!isPremiumAudio) {
-                    audio.playbackRate = state.speechRate;
+                    audio.playbackRate = parseFloat(state.speechRate) || 1;
                 }
                 
                 state.currentAudio = audio;
@@ -903,22 +972,20 @@
                 audio.onended = () => {
                     state.currentAudio = null;
                     if (isPremiumAudio) URL.revokeObjectURL(audioUrl); // Dọn dẹp RAM
-                    resolve();
+                    safeResolve();
                 };
                 
                 audio.onerror = () => {
-                    console.warn("Lỗi tải âm thanh online, lùi về giọng mặc định của máy.");
-                    fallbackTTS(text, resolve);
+                    triggerFallback("Không thể tải âm thanh online (Lỗi 403/404)");
                 };
                 
                 audio.play().catch(e => {
-                    console.warn("Lỗi phát âm thanh online, lùi về giọng mặc định của máy:", e);
-                    fallbackTTS(text, resolve);
+                    triggerFallback("Trình duyệt chặn phát âm thanh (" + e.message + ")");
                 });
 
             } catch (error) {
                 console.error(error);
-                fallbackTTS(text, resolve);
+                triggerFallback("Lỗi hệ thống Catch block");
             }
         });
     }
