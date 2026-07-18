@@ -16,6 +16,52 @@
         SUPPORTED_FORMATS: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'],
     };
 
+    // ─── Danh sách ngôn ngữ nguồn hỗ trợ ──────────────────────────────
+    // code   : mã dùng cho Web Speech Recognition (BCP-47)
+    // trCode : mã dùng cho MyMemory Translation API
+    // label  : tên hiển thị (tiếng Việt) trong dropdown
+    const LANGUAGES = [
+        { code: 'en-US', trCode: 'en',    label: 'Tiếng Anh (Mỹ)' },
+        { code: 'en-GB', trCode: 'en',    label: 'Tiếng Anh (Anh)' },
+        { code: 'ja-JP', trCode: 'ja',    label: 'Tiếng Nhật' },
+        { code: 'ko-KR', trCode: 'ko',    label: 'Tiếng Hàn' },
+        { code: 'zh-CN', trCode: 'zh-CN', label: 'Tiếng Trung (Giản thể)' },
+        { code: 'zh-TW', trCode: 'zh-TW', label: 'Tiếng Trung (Phồn thể)' },
+        { code: 'fr-FR', trCode: 'fr',    label: 'Tiếng Pháp' },
+        { code: 'de-DE', trCode: 'de',    label: 'Tiếng Đức' },
+        { code: 'es-ES', trCode: 'es',    label: 'Tiếng Tây Ban Nha' },
+        { code: 'it-IT', trCode: 'it',    label: 'Tiếng Ý' },
+        { code: 'pt-BR', trCode: 'pt',    label: 'Tiếng Bồ Đào Nha (Brazil)' },
+        { code: 'pt-PT', trCode: 'pt',    label: 'Tiếng Bồ Đào Nha (Bồ Đào Nha)' },
+        { code: 'ru-RU', trCode: 'ru',    label: 'Tiếng Nga' },
+        { code: 'th-TH', trCode: 'th',    label: 'Tiếng Thái' },
+        { code: 'hi-IN', trCode: 'hi',    label: 'Tiếng Hindi' },
+        { code: 'id-ID', trCode: 'id',    label: 'Tiếng Indonesia' },
+        { code: 'ms-MY', trCode: 'ms',    label: 'Tiếng Mã Lai' },
+        { code: 'ar-SA', trCode: 'ar',    label: 'Tiếng Ả Rập' },
+        { code: 'nl-NL', trCode: 'nl',    label: 'Tiếng Hà Lan' },
+        { code: 'pl-PL', trCode: 'pl',    label: 'Tiếng Ba Lan' },
+        { code: 'tr-TR', trCode: 'tr',    label: 'Tiếng Thổ Nhĩ Kỳ' },
+        { code: 'uk-UA', trCode: 'uk',    label: 'Tiếng Ukraina' },
+        { code: 'sv-SE', trCode: 'sv',    label: 'Tiếng Thụy Điển' },
+        { code: 'da-DK', trCode: 'da',    label: 'Tiếng Đan Mạch' },
+        { code: 'no-NO', trCode: 'no',    label: 'Tiếng Na Uy' },
+        { code: 'fi-FI', trCode: 'fi',    label: 'Tiếng Phần Lan' },
+        { code: 'el-GR', trCode: 'el',    label: 'Tiếng Hy Lạp' },
+        { code: 'he-IL', trCode: 'he',    label: 'Tiếng Do Thái' },
+        { code: 'cs-CZ', trCode: 'cs',    label: 'Tiếng Séc' },
+        { code: 'hu-HU', trCode: 'hu',    label: 'Tiếng Hungary' },
+        { code: 'ro-RO', trCode: 'ro',    label: 'Tiếng Romania' },
+        { code: 'fil-PH', trCode: 'tl',   label: 'Tiếng Philippines (Filipino)' },
+        { code: 'bn-BD', trCode: 'bn',    label: 'Tiếng Bengal' },
+        { code: 'ur-PK', trCode: 'ur',    label: 'Tiếng Urdu' },
+        { code: 'ta-IN', trCode: 'ta',    label: 'Tiếng Tamil' },
+        { code: 'te-IN', trCode: 'te',    label: 'Tiếng Telugu' },
+        { code: 'km-KH', trCode: 'km',    label: 'Tiếng Khmer' },
+        { code: 'lo-LA', trCode: 'lo',    label: 'Tiếng Lào' },
+        { code: 'my-MM', trCode: 'my',    label: 'Tiếng Myanmar' },
+    ];
+
     // ─── State ───────────────────────────────────────────────────────
     const state = {
         videoFile: null,
@@ -123,6 +169,10 @@
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    function getLangByCode(code) {
+        return LANGUAGES.find(l => l.code === code) || LANGUAGES[0];
+    }
+
     // ─── Toast Notifications ─────────────────────────────────────────
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
@@ -157,6 +207,22 @@
             showToast('Trình duyệt không hỗ trợ đầy đủ. Vui lòng dùng Chrome hoặc Edge.', 'warning');
         }
         return hasSpeechRecognition && hasSpeechSynthesis;
+    }
+
+    // ─── Populate Source Language Dropdown ────────────────────────────
+    function loadSourceLanguages() {
+        if (!els.sourceLang) return;
+
+        els.sourceLang.innerHTML = '';
+        LANGUAGES.forEach((lang) => {
+            const opt = document.createElement('option');
+            opt.value = lang.code;
+            opt.textContent = lang.label;
+            els.sourceLang.appendChild(opt);
+        });
+
+        // Mặc định chọn Tiếng Anh (Mỹ)
+        els.sourceLang.value = 'en-US';
     }
 
     // ─── Load Vietnamese Voices ──────────────────────────────────────
@@ -635,14 +701,8 @@
 
     // ─── Translation ─────────────────────────────────────────────────
     async function translateText(text, sourceLang) {
-        // Map speech recognition lang codes to MyMemory lang codes
-        const langMap = {
-            'en-US': 'en', 'en-GB': 'en', 'ja': 'ja', 'ko': 'ko',
-            'zh-CN': 'zh-CN', 'fr': 'fr', 'de': 'de', 'es': 'es',
-            'th': 'th', 'ru': 'ru', 'pt': 'pt', 'hi': 'hi',
-        };
-
-        const from = langMap[sourceLang] || 'en';
+        // Lấy mã ngôn ngữ MyMemory tương ứng với mã Speech Recognition
+        const from = getLangByCode(sourceLang).trCode;
         const to = 'vi';
 
         try {
@@ -998,6 +1058,7 @@
     // ─── Initialize ──────────────────────────────────────────────────
     function init() {
         checkBrowserSupport();
+        loadSourceLanguages();
         loadVoices();
 
         // Voices may load asynchronously
