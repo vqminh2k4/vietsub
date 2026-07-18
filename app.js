@@ -304,7 +304,15 @@
             els.vnVoice.appendChild(opt);
         });
 
-        state.selectedVoice = state.vnVoices[0];
+        // Ưu tiên chọn giọng nữ: tìm theo từ khóa 'female', 'woman', 'girl', 'Thu', 'My', 'Lan', 'HoaiMy'
+        const femaleKeywords = /female|woman|girl|thu|my|lan|hoaim|huong|mai|linh/i;
+        const femaleVoice = state.vnVoices.find(v => femaleKeywords.test(v.name));
+        const defaultVoice = femaleVoice || state.vnVoices[0];
+        state.selectedVoice = defaultVoice;
+
+        // Cập nhật dropdown để khớp với giọng được chọn
+        const selectedIdx = state.vnVoices.indexOf(defaultVoice);
+        if (selectedIdx >= 0) els.vnVoice.value = selectedIdx;
     }
 
     // ─── Upload Handler ──────────────────────────────────────────────
@@ -878,7 +886,8 @@
 
     function fallbackTTS(text, resolve) {
         if (!state.synth) { resolve(); return; }
-        state.synth.cancel(); 
+        // KHÔNG cancel toàn bộ queue — chỉ phát câu hiện tại
+        // Nếu synth đang nói, chờ nó xong rồi mới phát tiếp (dùng queue tự nhiên)
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'vi-VN';
@@ -886,6 +895,7 @@
         utterance.pitch = els.animeVoiceToggle.checked ? 1.5 : 1;
         utterance.volume = 1;
 
+        // Luôn dùng giọng nữ đã chọn
         if (state.selectedVoice) {
             utterance.voice = state.selectedVoice;
         }
