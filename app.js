@@ -147,6 +147,9 @@
         // URL Input
         urlInput: $('#urlInput'),
         btnUrlSubmit: $('#btnUrlSubmit'),
+
+        // Anime Hack
+        animeVoiceToggle: $('#animeVoiceToggle'),
     };
 
     // ─── Utilities ───────────────────────────────────────────────────
@@ -738,8 +741,11 @@
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'vi-VN';
-            utterance.rate = state.speechRate;
-            utterance.pitch = 1;
+            
+            // Anime hack
+            const isAnimeMode = els.animeVoiceToggle.checked;
+            utterance.rate = isAnimeMode ? state.speechRate * 1.25 : state.speechRate;
+            utterance.pitch = isAnimeMode ? 1.7 : 1;
             utterance.volume = 1;
 
             if (state.selectedVoice) {
