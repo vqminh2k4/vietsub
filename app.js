@@ -735,28 +735,63 @@
     // ─── Text-to-Speech (Vietnamese) ─────────────────────────────────
     function speakVietnamese(text) {
         return new Promise((resolve) => {
-            if (!state.synth) { resolve(); return; }
-
-            state.synth.cancel(); // Cancel any ongoing speech
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'vi-VN';
-            
-            // Anime hack
-            const isAnimeMode = els.animeVoiceToggle.checked;
-            utterance.rate = isAnimeMode ? state.speechRate * 1.25 : state.speechRate;
-            utterance.pitch = isAnimeMode ? 1.7 : 1;
-            utterance.volume = 1;
-
-            if (state.selectedVoice) {
-                utterance.voice = state.selectedVoice;
+            if (state.currentAudio) {
+                state.currentAudio.pause();
+                state.currentAudio = null;
             }
 
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve();
+            const isAnimeMode = els.animeVoiceToggle.checked;
 
-            state.synth.speak(utterance);
+            if (isAnimeMode) {
+                // Sử dụng Google Translate TTS (bảo đảm giọng nữ) + Hack Pitch
+                const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
+                const audio = new Audio(url);
+                
+                // Hack: Tăng tốc độ và giảm preservesPitch để âm thanh the thé lên (Anime loli)
+                audio.playbackRate = state.speechRate * 1.35;
+                if ('preservesPitch' in audio) audio.preservesPitch = false;
+                if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
+                if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
+                
+                state.currentAudio = audio;
+                
+                audio.onended = () => {
+                    state.currentAudio = null;
+                    resolve();
+                };
+                audio.onerror = () => {
+                    console.warn("Lỗi tải Google TTS, chuyển về giọng mặc định");
+                    fallbackTTS(text, resolve);
+                };
+                
+                audio.play().catch(e => {
+                    fallbackTTS(text, resolve);
+                });
+            } else {
+                // Chế độ mặc định dùng Web Speech API
+                fallbackTTS(text, resolve);
+            }
         });
+    }
+
+    function fallbackTTS(text, resolve) {
+        if (!state.synth) { resolve(); return; }
+        state.synth.cancel(); 
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'vi-VN';
+        utterance.rate = state.speechRate;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        if (state.selectedVoice) {
+            utterance.voice = state.selectedVoice;
+        }
+
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+
+        state.synth.speak(utterance);
     }
 
     async function playVietnameseAudio() {
@@ -769,6 +804,10 @@
 
         if (!state.isVNPlaying) {
             state.synth.cancel();
+            if (state.currentAudio) {
+                state.currentAudio.pause();
+                state.currentAudio = null;
+            }
             els.btnPlayVN.innerHTML = `
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                     <path d="M4 2L15 9L4 16V2Z"/>
