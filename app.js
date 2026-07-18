@@ -878,35 +878,25 @@
         return URL.createObjectURL(blob);
     }
 
-    function fallbackTTS(text, resolve) {
-        // Fallback cuối cùng: Google TTS giọng nữ (khi Applio chưa bật)
-        const ttsUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
-        const audio = new Audio(ttsUrl);
+        // ─── Google TTS (luôn giọng nữ) ────────────────────────────────────
+    function playGoogleTTS(text, resolve) {
+        // Google Translate TTS luôn trả về giọng Nữ cho tiếng Việt
+        const chunk = text.substring(0, 200); // ghép sự an toàn
+        const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(chunk)}`;
+        const audio = new Audio(url);
         audio.playbackRate = parseFloat(state.speechRate) || 1;
-        
         state.currentAudio = audio;
         audio.onended = () => { state.currentAudio = null; resolve(); };
-        audio.onerror = () => {
-            // Cuối cùng dùng Web Speech (giọng nữ đã chọn)
-            if (!state.synth) { resolve(); return; }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'vi-VN';
-            utterance.rate = parseFloat(state.speechRate) || 1;
-            utterance.pitch = 1.2;
-            utterance.volume = 1;
-            if (state.selectedVoice) utterance.voice = state.selectedVoice;
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve();
-            state.synth.speak(utterance);
-        };
-        audio.play().catch(() => audio.onerror());
+        audio.onerror = () => { state.currentAudio = null; resolve(); }; // bỏ qua lỗi, sang câu tiếp
+        audio.play().catch(() => resolve()); // trình duyệt chặn → bỏ qua
     }
 
     function speakVietnamese(text) {
         return new Promise(async (resolve) => {
-            let resolved = false;
-            const safeResolve = () => { if (!resolved) { resolved = true; resolve(); } };
+            let done = false;
+            const finish = () => { if (!done) { done = true; resolve(); } };
 
+            // Dừng audio cũ nếu đang phát
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
@@ -916,53 +906,40 @@
             const localApiUrl = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:6969';
             const fishApiKey = localStorage.getItem('fishApiKey');
 
-            try {
-                let audioUrl = null;
-
-                // Ưu tiên 1: Kurumi Local AI (Applio)
-                if (ttsBackend === 'local') {
-                    try {
-                        audioUrl = await getLocalAudioStream(text, localApiUrl);
-                    } catch (e) {
-                        console.warn('⚠️ Applio chưa bật hoặc lỗi, lùi về Google TTS:', e.message);
-                    }
-                }
-
-                // Ưu tiên 2: Fish Audio
-                if (!audioUrl && ttsBackend === 'fish' && fishApiKey) {
-                    try {
-                        audioUrl = await getFishAudioStream(text, fishApiKey);
-                    } catch (e) {
-                        console.warn('⚠️ Fish Audio lỗi, lùi về Google TTS:', e.message);
-                    }
-                }
-
-                // Nếu có audio từ AI (Kurumi hoặc Fish)
-                if (audioUrl) {
-                    const audio = new Audio(audioUrl);
+            // ── Ưu tiên 1: Kurumi (Applio Local AI) ──
+            if (ttsBackend === 'local') {
+                try {
+                    const url = await getLocalAudioStream(text, localApiUrl);
+                    const audio = new Audio(url);
                     audio.playbackRate = parseFloat(state.speechRate) || 1;
                     state.currentAudio = audio;
-
-                    audio.onended = () => {
-                        state.currentAudio = null;
-                        URL.revokeObjectURL(audioUrl);
-                        safeResolve();
-                    };
-                    audio.onerror = () => {
-                        console.warn('Lỗi phát audio Kurumi, lùi về Google TTS');
-                        fallbackTTS(text, safeResolve);
-                    };
-                    audio.play().catch(() => fallbackTTS(text, safeResolve));
+                    audio.onended = () => { URL.revokeObjectURL(url); state.currentAudio = null; finish(); };
+                    audio.onerror = () => { URL.revokeObjectURL(url); playGoogleTTS(text, finish); };
+                    await audio.play();
                     return;
+                } catch (e) {
+                    console.warn('⚠️ Applio chưa bật:', e.message);
                 }
-
-                // Dự phòng: Google TTS giọng nữ
-                fallbackTTS(text, safeResolve);
-
-            } catch (error) {
-                console.error(error);
-                fallbackTTS(text, safeResolve);
             }
+
+            // ── Ưu tiên 2: Fish Audio ──
+            if (ttsBackend === 'fish' && fishApiKey) {
+                try {
+                    const url = await getFishAudioStream(text, fishApiKey);
+                    const audio = new Audio(url);
+                    audio.playbackRate = parseFloat(state.speechRate) || 1;
+                    state.currentAudio = audio;
+                    audio.onended = () => { URL.revokeObjectURL(url); state.currentAudio = null; finish(); };
+                    audio.onerror = () => { URL.revokeObjectURL(url); playGoogleTTS(text, finish); };
+                    await audio.play();
+                    return;
+                } catch (e) {
+                    console.warn('⚠️ Fish Audio lỗi:', e.message);
+                }
+            }
+
+            // ── Dự phòng: Google TTS giọng Nữ ──
+            playGoogleTTS(text, finish);
         });
     }
 
@@ -975,10 +952,14 @@
         state.isVNPlaying = !state.isVNPlaying;
 
         if (!state.isVNPlaying) {
+            // ── Dừng ──
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
             }
+            // Bật lại âm thanh gốc
+            els.videoPlayer.muted = false;
+            els.videoPlayer.pause();
             els.btnPlayVN.innerHTML = `
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                     <path d="M4 2L15 9L4 16V2Z"/>
@@ -995,10 +976,10 @@
             Dừng Giọng Việt
         `;
 
-        // KHÔNG mute video gốc — để âm thanh gốc chạy song song với giọng Việt
-        // (Nếu muốn tắt tiếng gốc, dùng nút "Tắt/Bật Tiếng Gốc" riêng)
+        // T\u1eaft ti\u1ebfng g\u1ed1c khi ph\u00e1t gi\u1ecdng Vi\u1ec7t
+        els.videoPlayer.muted = true;
         els.videoPlayer.currentTime = 0;
-        if (els.videoPlayer.paused) els.videoPlayer.play();
+        els.videoPlayer.play();
 
         for (let i = 0; i < state.segments.length; i++) {
             if (!state.isVNPlaying) break;
@@ -1024,13 +1005,15 @@
         }
 
         state.isVNPlaying = false;
+        els.videoPlayer.muted = false;
+        els.videoPlayer.pause();
         els.btnPlayVN.innerHTML = `
             <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                 <path d="M4 2L15 9L4 16V2Z"/>
             </svg>
-            Phát Giọng Việt
+            Ph\u00e1t Gi\u1ecdng Vi\u1ec7t
         `;
-        showToast('Đã phát xong tất cả đoạn tiếng Việt!', 'success');
+        showToast('\u0110\u00e3 ph\u00e1t xong!', 'success');
     }
 
     // ─── Processing Pipeline ─────────────────────────────────────────
