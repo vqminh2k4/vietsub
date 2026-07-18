@@ -199,10 +199,10 @@
 
                     <!-- Anime Voice Hack -->
                     <div class="control-group checkbox-group">
-                        <label class="checkbox-label" title="Dùng API Fish Audio (Giọng Kurumi) nếu đã nhập API Key">
+                        <label class="checkbox-label" title="Dùng AI (Fish Audio hoặc Local) để giả giọng Kurumi">
                             <input type="checkbox" id="animeVoiceToggle">
                             <span class="custom-checkbox"></span>
-                            Giọng Kurumi Tokisaki (Fish Audio) 🌸
+                            Giọng Kurumi Tokisaki (AI) 🌸
                         </label>
                     </div>
 
@@ -300,11 +300,27 @@
             </div>
             <div class="modal-body">
                 <div class="control-group">
+                    <label class="control-label">Nguồn giọng AI (Backend)</label>
+                    <select id="ttsBackendSelect" class="select-input" style="width: 100%; margin-bottom: 1rem;">
+                        <option value="fish">Fish Audio API (Cần Credit)</option>
+                        <option value="local">Local AI (Chạy trên máy tính)</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="groupFishApi">
                     <label class="control-label">Fish Audio API Key</label>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
-                        Để dùng giọng Kurumi, lấy API Key miễn phí tại <a href="https://fish.audio/app/api-keys/" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Fish Audio</a>
+                        Để dùng giọng Kurumi, lấy API Key tại <a href="https://fish.audio/app/api-keys/" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Fish Audio</a>
                     </p>
                     <input type="password" id="fishApiKeyInput" class="select-input" placeholder="Dán mã API Key của bạn vào đây..." style="width: 100%; margin-bottom: 1rem;">
+                </div>
+
+                <div class="control-group" id="groupLocalApi" style="display: none;">
+                    <label class="control-label">Local API URL</label>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
+                        Nhập địa chỉ phần mềm AI đang chạy trên máy tính của bạn (VD: Applio, RVC WebUI). Mặc định là cổng 5000.
+                    </p>
+                    <input type="text" id="localApiUrlInput" class="select-input" placeholder="http://127.0.0.1:5000/tts" value="http://127.0.0.1:5000/tts" style="width: 100%; margin-bottom: 1rem;">
                 </div>
             </div>
             <div class="modal-footer" style="text-align: right;">

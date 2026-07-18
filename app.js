@@ -152,7 +152,11 @@
         btnSettings: $('#btnSettings'),
         settingsModal: $('#settingsModal'),
         btnCloseSettings: $('#btnCloseSettings'),
+        ttsBackendSelect: $('#ttsBackendSelect'),
+        groupFishApi: $('#groupFishApi'),
+        groupLocalApi: $('#groupLocalApi'),
         fishApiKeyInput: $('#fishApiKeyInput'),
+        localApiUrlInput: $('#localApiUrlInput'),
         btnSaveSettings: $('#btnSaveSettings'),
 
         // Anime Hack
@@ -201,9 +205,23 @@
 
         // Settings Modal
         els.btnSettings.addEventListener('click', () => {
-            const savedKey = localStorage.getItem('fishApiKey') || '';
-            els.fishApiKeyInput.value = savedKey;
+            els.ttsBackendSelect.value = localStorage.getItem('ttsBackend') || 'fish';
+            els.fishApiKeyInput.value = localStorage.getItem('fishApiKey') || '';
+            els.localApiUrlInput.value = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:5000/tts';
+            
+            // Dispatch change to update UI
+            els.ttsBackendSelect.dispatchEvent(new Event('change'));
             els.settingsModal.hidden = false;
+        });
+
+        els.ttsBackendSelect.addEventListener('change', () => {
+            if (els.ttsBackendSelect.value === 'fish') {
+                els.groupFishApi.style.display = 'block';
+                els.groupLocalApi.style.display = 'none';
+            } else {
+                els.groupFishApi.style.display = 'none';
+                els.groupLocalApi.style.display = 'block';
+            }
         });
 
         els.btnCloseSettings.addEventListener('click', () => {
@@ -211,14 +229,16 @@
         });
 
         els.btnSaveSettings.addEventListener('click', () => {
+            localStorage.setItem('ttsBackend', els.ttsBackendSelect.value);
+            
             const key = els.fishApiKeyInput.value.trim();
-            if (key) {
-                localStorage.setItem('fishApiKey', key);
-                showToast('Đã lưu API Key!', 'success');
-            } else {
-                localStorage.removeItem('fishApiKey');
-                showToast('Đã xóa API Key!', 'success');
-            }
+            if (key) localStorage.setItem('fishApiKey', key);
+            else localStorage.removeItem('fishApiKey');
+
+            const localUrl = els.localApiUrlInput.value.trim();
+            if (localUrl) localStorage.setItem('localApiUrl', localUrl);
+
+            showToast('Đã lưu cài đặt AI!', 'success');
             els.settingsModal.hidden = true;
         });
     }
@@ -780,7 +800,24 @@
             throw new Error(`Fish Audio Error: ${response.status}`);
         }
         
-        // Trả về blob URL
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+    }
+
+    async function getLocalAudioStream(text, localUrl) {
+        // Assume Local API accepts GET requests: http://127.0.0.1:5000/tts?text=...
+        // Or POST. We'll try GET first as it's common for simple TTS servers.
+        const url = new URL(localUrl);
+        url.searchParams.append('text', text);
+        
+        const response = await fetch(url.toString(), {
+            method: 'GET'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Local API Error: ${response.status}`);
+        }
+        
         const blob = await response.blob();
         return URL.createObjectURL(blob);
     }
@@ -813,39 +850,51 @@
             }
 
             const isAnimeMode = els.animeVoiceToggle.checked;
+            const ttsBackend = localStorage.getItem('ttsBackend') || 'fish';
             const fishApiKey = localStorage.getItem('fishApiKey');
+            const localApiUrl = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:5000/tts';
 
             try {
                 let audioUrl = '';
-                let isFishAudio = false;
+                let isPremiumAudio = false;
 
-                if (isAnimeMode && fishApiKey) {
-                    try {
-                        audioUrl = await getFishAudioStream(text, fishApiKey);
-                        isFishAudio = true;
-                    } catch (e) {
-                        console.warn("Lỗi gọi Fish Audio, lùi về Google TTS", e);
-                        audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
+                if (isAnimeMode) {
+                    if (ttsBackend === 'fish' && fishApiKey) {
+                        try {
+                            audioUrl = await getFishAudioStream(text, fishApiKey);
+                            isPremiumAudio = true;
+                        } catch (e) {
+                            console.warn("Lỗi gọi Fish Audio, lùi về Google TTS", e);
+                        }
+                    } else if (ttsBackend === 'local') {
+                        try {
+                            audioUrl = await getLocalAudioStream(text, localApiUrl);
+                            isPremiumAudio = true;
+                        } catch (e) {
+                            console.warn("Lỗi gọi Local API, lùi về Google TTS", e);
+                        }
                     }
-                } else {
+                }
+                
+                if (!isPremiumAudio) {
                     audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
                 }
 
                 // Google TTS has a ~200 character limit. Fallback directly if text is too long.
-                if (!isFishAudio && text.length > 200) {
+                if (!isPremiumAudio && text.length > 200) {
                     console.warn("Câu quá dài đối với Google TTS, lùi về giọng mặc định của máy");
                     return fallbackTTS(text, resolve);
                 }
 
                 const audio = new Audio(audioUrl);
                 
-                if (isAnimeMode && !isFishAudio) {
+                if (isAnimeMode && !isPremiumAudio) {
                     // Hack: Tăng tốc độ và giảm preservesPitch để âm thanh the thé lên (Anime loli)
                     audio.playbackRate = state.speechRate * 1.35;
                     if ('preservesPitch' in audio) audio.preservesPitch = false;
                     if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = false;
                     if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
-                } else if (!isFishAudio) {
+                } else if (!isPremiumAudio) {
                     audio.playbackRate = state.speechRate;
                 }
                 
@@ -853,7 +902,7 @@
                 
                 audio.onended = () => {
                     state.currentAudio = null;
-                    if (isFishAudio) URL.revokeObjectURL(audioUrl); // Dọn dẹp RAM
+                    if (isPremiumAudio) URL.revokeObjectURL(audioUrl); // Dọn dẹp RAM
                     resolve();
                 };
                 
