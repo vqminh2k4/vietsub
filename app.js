@@ -278,19 +278,21 @@
     // ─── Load Vietnamese Voices ──────────────────────────────────────
     function selectBestVietVoice(voices) {
         if (!voices || voices.length === 0) return null;
-        // Ưu tiên giọng nữ HoaiMy (rất phổ biến trên Chrome tiếng Việt)
-        const femaleKeywords = /hoaim|female|woman|girl|thu\b|my\b|lan\b|huong|mai|linh/i;
-        return voices.find(v => femaleKeywords.test(v.name)) || voices[0];
+        // Ưu tiên 1: HoaiMyNeural (giọng nữ AI cao cấp của Microsoft Edge/Win11)
+        const hoaiMy = voices.find(v => /hoaim/i.test(v.name));
+        if (hoaiMy) return hoaiMy;
+        // Ưu tiên 2: bất kỳ giọng nữ VN nào
+        const female = voices.find(v => /female|woman|girl|thu\b|my\b|lan\b|huong|mai|linh/i.test(v.name));
+        if (female) return female;
+        // Cuối: lấy cái đầu tiên (dù nam hay nữ — Google TTS sẽ ghi đè bằng giọng nữ)
+        return voices[0];
     }
 
     function loadVoices() {
         const allVoices = state.synth ? state.synth.getVoices() : [];
         const vnVoices = allVoices.filter(v => v.lang.startsWith('vi'));
         
-        if (vnVoices.length === 0) {
-            // Giọng VN chưa load xong, đợi event voiceschanged sẽ gọi lại
-            return;
-        }
+        if (vnVoices.length === 0) return;
         
         state.vnVoices = vnVoices;
         els.vnVoice.innerHTML = '';
@@ -306,7 +308,16 @@
         const idx = vnVoices.indexOf(best);
         if (idx >= 0) els.vnVoice.value = idx;
         
-        console.log('✅ Giọng nữ được chọn:', best?.name);
+        // Cập nhật badge hiển thị
+        const voiceBadgeName = document.querySelector('#voiceActiveName');
+        if (voiceBadgeName && best) {
+            if (/hoaim/i.test(best.name)) {
+                voiceBadgeName.textContent = 'HoaiMy Neural (Đã cài sẵn trên máy bạn!)';
+            } else {
+                voiceBadgeName.textContent = 'Google TTS Nữ (Dự phòng)';
+            }
+        }
+        console.log('✅ Giọng được chọn:', best?.name);
     }
 
     // ─── Upload Handler ──────────────────────────────────────────────
@@ -878,17 +889,30 @@
         return URL.createObjectURL(blob);
     }
 
-        // ─── Google TTS (luôn giọng nữ) ────────────────────────────────────
+        // ─── TTS Dự phòng: HoaiMyNeural (Edge) hoặc Google TTS ──────────────────
     function playGoogleTTS(text, resolve) {
-        // Google Translate TTS luôn trả về giọng Nữ cho tiếng Việt
-        const chunk = text.substring(0, 200); // ghép sự an toàn
+        // Nếu có giọng HoaiMyNeural (Edge/Win11) → dùng nó (chất lượng AI cao)
+        if (state.selectedVoice && /hoaim/i.test(state.selectedVoice.name)) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = state.selectedVoice;
+            utterance.lang = 'vi-VN';
+            utterance.rate = parseFloat(state.speechRate) || 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            utterance.onend = () => resolve();
+            utterance.onerror = () => resolve();
+            state.synth.speak(utterance);
+            return;
+        }
+        // Không có Neural voice → dùng Google TTS URL (luôn giọng nữ)
+        const chunk = text.substring(0, 200);
         const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(chunk)}`;
         const audio = new Audio(url);
         audio.playbackRate = parseFloat(state.speechRate) || 1;
         state.currentAudio = audio;
         audio.onended = () => { state.currentAudio = null; resolve(); };
-        audio.onerror = () => { state.currentAudio = null; resolve(); }; // bỏ qua lỗi, sang câu tiếp
-        audio.play().catch(() => resolve()); // trình duyệt chặn → bỏ qua
+        audio.onerror = () => { state.currentAudio = null; resolve(); };
+        audio.play().catch(() => resolve());
     }
 
     function speakVietnamese(text) {
