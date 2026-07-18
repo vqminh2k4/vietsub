@@ -276,43 +276,37 @@
     }
 
     // ─── Load Vietnamese Voices ──────────────────────────────────────
+    function selectBestVietVoice(voices) {
+        if (!voices || voices.length === 0) return null;
+        // Ưu tiên giọng nữ HoaiMy (rất phổ biến trên Chrome tiếng Việt)
+        const femaleKeywords = /hoaim|female|woman|girl|thu\b|my\b|lan\b|huong|mai|linh/i;
+        return voices.find(v => femaleKeywords.test(v.name)) || voices[0];
+    }
+
     function loadVoices() {
-        const voices = state.synth.getVoices();
-        state.vnVoices = voices.filter(v => v.lang.startsWith('vi'));
-
-        els.vnVoice.innerHTML = '';
-
-        if (state.vnVoices.length === 0) {
-            // Try all voices
-            const fallback = voices.filter(v => v.lang.includes('vi') || v.name.toLowerCase().includes('viet'));
-            if (fallback.length > 0) {
-                state.vnVoices = fallback;
-            } else {
-                // Add default option
-                const opt = document.createElement('option');
-                opt.value = 'default';
-                opt.textContent = 'Giọng mặc định (không tìm thấy giọng VN)';
-                els.vnVoice.appendChild(opt);
-                return;
-            }
+        const allVoices = state.synth ? state.synth.getVoices() : [];
+        const vnVoices = allVoices.filter(v => v.lang.startsWith('vi'));
+        
+        if (vnVoices.length === 0) {
+            // Giọng VN chưa load xong, đợi event voiceschanged sẽ gọi lại
+            return;
         }
-
-        state.vnVoices.forEach((voice, i) => {
+        
+        state.vnVoices = vnVoices;
+        els.vnVoice.innerHTML = '';
+        vnVoices.forEach((voice, i) => {
             const opt = document.createElement('option');
             opt.value = i;
             opt.textContent = `${voice.name} (${voice.lang})`;
             els.vnVoice.appendChild(opt);
         });
 
-        // Ưu tiên chọn giọng nữ: tìm theo từ khóa 'female', 'woman', 'girl', 'Thu', 'My', 'Lan', 'HoaiMy'
-        const femaleKeywords = /female|woman|girl|thu|my|lan|hoaim|huong|mai|linh/i;
-        const femaleVoice = state.vnVoices.find(v => femaleKeywords.test(v.name));
-        const defaultVoice = femaleVoice || state.vnVoices[0];
-        state.selectedVoice = defaultVoice;
-
-        // Cập nhật dropdown để khớp với giọng được chọn
-        const selectedIdx = state.vnVoices.indexOf(defaultVoice);
-        if (selectedIdx >= 0) els.vnVoice.value = selectedIdx;
+        const best = selectBestVietVoice(vnVoices);
+        state.selectedVoice = best;
+        const idx = vnVoices.indexOf(best);
+        if (idx >= 0) els.vnVoice.value = idx;
+        
+        console.log('✅ Giọng nữ được chọn:', best?.name);
     }
 
     // ─── Upload Handler ──────────────────────────────────────────────
@@ -1001,10 +995,10 @@
             Dừng Giọng Việt
         `;
 
-        // Mute original audio
-        els.videoPlayer.muted = true;
+        // KHÔNG mute video gốc — để âm thanh gốc chạy song song với giọng Việt
+        // (Nếu muốn tắt tiếng gốc, dùng nút "Tắt/Bật Tiếng Gốc" riêng)
         els.videoPlayer.currentTime = 0;
-        els.videoPlayer.play();
+        if (els.videoPlayer.paused) els.videoPlayer.play();
 
         for (let i = 0; i < state.segments.length; i++) {
             if (!state.isVNPlaying) break;
@@ -1012,25 +1006,24 @@
             const seg = state.segments[i];
             highlightSegment(seg.id);
 
-            // Seek video to segment start
+            // Đợi video đến đúng thời điểm phát của đoạn này
             els.videoPlayer.currentTime = seg.startTime;
 
-            // Update subtitles
+            // Cập nhật phụ đề
             els.subtitleOriginal.textContent = seg.originalText;
             els.subtitleVietnamese.textContent = seg.vietnameseText;
             els.subtitleOverlay.classList.add('visible');
 
-            // Speak Vietnamese
+            // Phát tiếng Việt song song với video
             if (seg.vietnameseText && !seg.vietnameseText.startsWith('[Lỗi')) {
                 await speakVietnamese(seg.vietnameseText);
             }
 
-            // Small pause between segments
+            // Khoảng ngắng ngắn giữa các đoạn
             await delay(200);
         }
 
         state.isVNPlaying = false;
-        els.videoPlayer.muted = state.isMuted;
         els.btnPlayVN.innerHTML = `
             <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
                 <path d="M4 2L15 9L4 16V2Z"/>
@@ -1268,11 +1261,17 @@
     function init() {
         checkBrowserSupport();
         loadSourceLanguages();
-        loadVoices();
 
-        // Voices may load asynchronously
+        // Load voices: Chrome cần event voiceschanged mới có danh sách giọng
         if (state.synth) {
-            state.synth.addEventListener('voiceschanged', loadVoices);
+            // Thử load ngay
+            loadVoices();
+            // Lắng nghe khi danh sách giọng được load xong (bắt buộc với Chrome)
+            state.synth.addEventListener('voiceschanged', () => {
+                loadVoices();
+            });
+            // Thử lần nữa sau 500ms đề phòng Edge/Firefox
+            setTimeout(loadVoices, 500);
         }
 
         initUpload();
@@ -1280,7 +1279,7 @@
         bindEvents();
         initAnimations();
 
-        console.log('🎬 VietDub initialized successfully!');
+        console.log('✨ VietDub khởi động thành công!');
     }
 
     // Start
