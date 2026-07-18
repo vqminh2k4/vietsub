@@ -1,347 +1,1168 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="VietDub - Dịch video sang tiếng Việt với âm thanh tự động. Upload video, nhận dạng giọng nói, dịch thuật và tạo âm thanh tiếng Việt.">
-    <meta name="keywords" content="dịch video, tiếng Việt, phụ đề, lồng tiếng, video translation, Vietnamese dubbing">
-    <title>VietDub — Dịch Video Sang Tiếng Việt</title>
+    <meta name="description" content="Kurumi Music Cover — Transform any song into a Kurumi Tokisaki AI vocal cover. Paste a YouTube link or upload audio and hear your favorite songs in Kurumi's voice.">
+    <meta name="keywords" content="Kurumi Tokisaki, AI cover, music cover, Date A Live, anime voice, RVC, vocal cover">
+    <title>Kurumi Music Cover — 時崎狂三 AI Voice</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           CSS CUSTOM PROPERTIES — KURUMI TOKISAKI THEME
+        ═══════════════════════════════════════════════════════════════ */
+        :root {
+            --clr-bg:          #070509;
+            --clr-surface:     #0f0a10;
+            --clr-card:        #130d15;
+            --clr-border:      rgba(180, 20, 40, 0.25);
+            --clr-border-glow: rgba(220, 30, 60, 0.5);
+
+            --clr-red:         #c8102e;
+            --clr-red-bright:  #e8243a;
+            --clr-red-dark:    #7a0a1a;
+            --clr-red-glow:    rgba(200, 16, 46, 0.35);
+            --clr-gold:        #d4a843;
+            --clr-gold-light:  #f0c96a;
+
+            --clr-text:        #f0e8e8;
+            --clr-text-muted:  rgba(240, 232, 232, 0.45);
+            --clr-text-dim:    rgba(240, 232, 232, 0.25);
+
+            --font-heading:    'Cinzel', serif;
+            --font-body:       'Inter', sans-serif;
+
+            --radius-sm:       6px;
+            --radius-md:       12px;
+            --radius-lg:       20px;
+            --radius-full:     9999px;
+
+            --shadow-red:      0 0 30px rgba(200,16,46,0.3), 0 0 60px rgba(200,16,46,0.15);
+            --shadow-gold:     0 0 20px rgba(212,168,67,0.3);
+            --transition:      all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESET & BASE
+        ═══════════════════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--clr-bg);
+            color: var(--clr-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           BACKGROUND — animated gothic patterns
+        ═══════════════════════════════════════════════════════════════ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120,8,25,0.25) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 80% 80%, rgba(80,5,15,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 20% 70%, rgba(100,6,20,0.12) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Subtle clock grid overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(180,20,40,0.04) 60px),
+                repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(180,20,40,0.04) 60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           PARTICLES
+        ═══════════════════════════════════════════════════════════════ */
+        #particles-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           HEADER
+        ═══════════════════════════════════════════════════════════════ */
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            background: rgba(7,5,9,0.85);
+            backdrop-filter: blur(20px) saturate(1.4);
+            border-bottom: 1px solid var(--clr-border);
+        }
+
+        .header-inner {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Kurumi clock logo SVG */
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            filter: drop-shadow(0 0 8px rgba(200,16,46,0.7));
+            animation: clock-spin 20s linear infinite;
+        }
+        @keyframes clock-spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .logo-name {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+        .logo-name .accent { color: var(--clr-red-bright); }
+        .logo-subtitle {
+            font-size: 0.62rem;
+            color: var(--clr-text-muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .header-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.75rem;
+            color: var(--clr-text-muted);
+            background: rgba(200,16,46,0.08);
+            border: 1px solid rgba(200,16,46,0.2);
+            border-radius: var(--radius-full);
+            padding: 4px 12px;
+        }
+        .header-badge .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--clr-red-bright);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(200,16,46,0.4); }
+            50%      { opacity: 0.6; box-shadow: 0 0 0 5px rgba(200,16,46,0); }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MAIN LAYOUT
+        ═══════════════════════════════════════════════════════════════ */
+        main {
+            position: relative;
+            z-index: 2;
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           HERO
+        ═══════════════════════════════════════════════════════════════ */
+        .hero {
+            text-align: center;
+            padding: 3rem 0 2.5rem;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.72rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--clr-red-bright);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .hero-eyebrow::before,
+        .hero-eyebrow::after {
+            content: '';
+            width: 40px; height: 1px;
+            background: linear-gradient(to right, transparent, var(--clr-red));
+        }
+        .hero-eyebrow::after {
+            background: linear-gradient(to left, transparent, var(--clr-red));
+        }
+
+        .hero-title {
+            font-family: var(--font-heading);
+            font-size: clamp(2.2rem, 6vw, 3.8rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+            margin-bottom: 1.2rem;
+        }
+
+        .hero-title .line1 { display: block; color: var(--clr-text); }
+        .hero-title .line2 {
+            display: block;
+            background: linear-gradient(135deg, var(--clr-red-bright) 0%, var(--clr-gold) 60%, var(--clr-red-bright) 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .hero-desc {
+            font-size: 0.95rem;
+            color: var(--clr-text-muted);
+            max-width: 480px;
+            margin: 0 auto 0.5rem;
+            line-height: 1.7;
+        }
+
+        /* Clock ornament */
+        .clock-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1.5rem auto 0;
+            gap: 1.5rem;
+        }
+        .ornament-line {
+            width: 80px; height: 1px;
+            background: linear-gradient(to right, transparent, rgba(200,16,46,0.5));
+        }
+        .ornament-line:last-child {
+            background: linear-gradient(to left, transparent, rgba(200,16,46,0.5));
+        }
+        .ornament-diamond {
+            width: 8px; height: 8px;
+            background: var(--clr-red-bright);
+            transform: rotate(45deg);
+            box-shadow: 0 0 10px var(--clr-red);
+            animation: diamond-pulse 3s ease-in-out infinite;
+        }
+        @keyframes diamond-pulse {
+            0%,100% { box-shadow: 0 0 6px var(--clr-red), 0 0 0 0 rgba(200,16,46,0.3); }
+            50%      { box-shadow: 0 0 15px var(--clr-red), 0 0 20px rgba(200,16,46,0.15); }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           CARD — reusable glass panel
+        ═══════════════════════════════════════════════════════════════ */
+        .card {
+            background: var(--clr-card);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(200,16,46,0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           INPUT SECTION
+        ═══════════════════════════════════════════════════════════════ */
+        .input-card {
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--clr-red-bright);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-label svg { opacity: 0.8; }
+
+        .url-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .url-field {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1.5px solid var(--clr-border);
+            border-radius: var(--radius-md);
+            padding: 0 1rem 0 3.2rem;
+            height: 52px;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            color: var(--clr-text);
+            outline: none;
+            transition: var(--transition);
+            position: relative;
+        }
+        .url-field::placeholder { color: var(--clr-text-dim); }
+        .url-field:focus {
+            border-color: var(--clr-red-bright);
+            box-shadow: 0 0 0 3px rgba(200,16,46,0.15), inset 0 0 20px rgba(200,16,46,0.04);
+        }
+
+        .url-field-wrap {
+            position: relative;
+            flex: 1;
+        }
+        .url-icon-prefix {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-cover {
+            height: 52px;
+            padding: 0 1.6rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--clr-red) 0%, var(--clr-red-dark) 100%);
+            color: #fff;
+            letter-spacing: 0.04em;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-red);
+        }
+        .btn-primary:hover::before { opacity: 1; }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: rgba(200,16,46,0.1);
+            border: 1.5px solid var(--clr-border);
+            color: var(--clr-text);
+        }
+        .btn-secondary:hover {
+            background: rgba(200,16,46,0.18);
+            border-color: var(--clr-red);
+            transform: translateY(-1px);
+        }
+        .btn-secondary:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ─── Separator ───────────────────────────────────────────── */
+        .separator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .separator-line {
+            flex: 1;
+            height: 1px;
+            background: var(--clr-border);
+        }
+        .separator-text {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            color: var(--clr-text-dim);
+            text-transform: uppercase;
+        }
+
+        /* ─── File Drop Zone ─────────────────────────────────────── */
+        .drop-zone {
+            border: 2px dashed rgba(200,16,46,0.25);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(200,16,46,0.06) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .drop-zone:hover,
+        .drop-zone.drag-active {
+            border-color: var(--clr-red-bright);
+            background: rgba(200,16,46,0.05);
+        }
+        .drop-zone:hover::before,
+        .drop-zone.drag-active::before { opacity: 1; }
+
+        .drop-zone-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            filter: drop-shadow(0 0 8px rgba(200,16,46,0.5));
+        }
+        .drop-zone p {
+            font-size: 0.85rem;
+            color: var(--clr-text-muted);
+            margin: 0;
+        }
+        .drop-zone .highlight { color: var(--clr-red-bright); }
+
+        /* hidden file input */
+        #fileInput { display: none; }
+
+        /* ═══════════════════════════════════════════════════════════════
+           PROCESSING OVERLAY
+        ═══════════════════════════════════════════════════════════════ */
+        #processingPanel {
+            display: none;
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+        #processingPanel.active { display: block; }
+
+        /* Ornate clock spinner */
+        .clock-spinner {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .clock-spinner .clock-face {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(200,16,46,0.2);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .clock-spinner .clock-face::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            border: 1px solid rgba(200,16,46,0.12);
+        }
+
+        /* Rotating outer ring */
+        .spinner-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: var(--clr-red-bright);
+            border-right-color: var(--clr-red);
+            animation: spin 1.4s cubic-bezier(0.4, 0.1, 0.6, 0.9) infinite;
+        }
+        .spinner-ring-2 {
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            border-bottom-color: var(--clr-gold);
+            opacity: 0.7;
+            animation: spin 2.1s cubic-bezier(0.4, 0.1, 0.6, 0.9) infinite reverse;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Clock hands */
+        .clock-center {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--clr-red-bright);
+            position: absolute;
+            box-shadow: 0 0 8px var(--clr-red);
+            z-index: 2;
+        }
+        .clock-hand-hour {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 2px;
+            height: 28px;
+            background: var(--clr-red-bright);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(135deg);
+            border-radius: 2px 2px 0 0;
+            animation: clock-hour 12s linear infinite;
+        }
+        .clock-hand-min {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 1.5px;
+            height: 36px;
+            background: var(--clr-gold);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(210deg);
+            border-radius: 2px 2px 0 0;
+            animation: clock-min 1.5s linear infinite;
+        }
+        @keyframes clock-hour { to { transform: translateX(-50%) rotate(calc(135deg + 360deg)); } }
+        @keyframes clock-min  { to { transform: translateX(-50%) rotate(calc(210deg + 360deg)); } }
+
+        /* Tick marks */
+        .clock-ticks {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+        }
+        .clock-tick {
+            position: absolute;
+            width: 2px;
+            height: 6px;
+            background: rgba(200,16,46,0.35);
+            top: 4px;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 1px;
+        }
+
+        .processing-title {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: var(--clr-text);
+        }
+        .processing-sub {
+            font-size: 0.82rem;
+            color: var(--clr-text-muted);
+            min-height: 1.2em;
+            transition: var(--transition);
+        }
+
+        /* Progress bar */
+        .progress-track {
+            margin-top: 1.5rem;
+            height: 3px;
+            background: rgba(200,16,46,0.12);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        .progress-fill-bar {
+            height: 100%;
+            border-radius: var(--radius-full);
+            background: linear-gradient(90deg, var(--clr-red-dark), var(--clr-red-bright), var(--clr-gold));
+            background-size: 200% 100%;
+            animation: progress-glow 2s ease infinite;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        @keyframes progress-glow {
+            0%   { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESULT PLAYER
+        ═══════════════════════════════════════════════════════════════ */
+        #resultPanel {
+            display: none;
+        }
+        #resultPanel.active { display: block; }
+
+        .result-card {
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 1.5rem;
+        }
+        .result-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--clr-red-dark), var(--clr-red));
+            border: 2px solid var(--clr-red-bright);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 16px rgba(200,16,46,0.4);
+            flex-shrink: 0;
+        }
+        .result-info h3 {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--clr-text);
+        }
+        .result-info p {
+            font-size: 0.78rem;
+            color: var(--clr-text-muted);
+            margin-top: 2px;
+        }
+        .result-badge {
+            margin-left: auto;
+            background: rgba(200,16,46,0.15);
+            border: 1px solid rgba(200,16,46,0.3);
+            border-radius: var(--radius-full);
+            padding: 3px 12px;
+            font-size: 0.7rem;
+            color: var(--clr-red-bright);
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* Custom audio player */
+        .audio-player {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-md);
+            padding: 1.2rem 1.4rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .audio-waveform {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-bottom: 0.8rem;
+        }
+        .wave-bar {
+            flex: 1;
+            background: rgba(200,16,46,0.2);
+            border-radius: 2px;
+            height: 20%;
+            transition: height 0.15s ease;
+        }
+        .wave-bar.active { background: var(--clr-red-bright); }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-play-round {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: var(--clr-red);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: var(--transition);
+            box-shadow: 0 0 12px rgba(200,16,46,0.4);
+        }
+        .btn-play-round:hover {
+            background: var(--clr-red-bright);
+            box-shadow: var(--shadow-red);
+            transform: scale(1.08);
+        }
+        .btn-play-round svg { fill: white; }
+
+        .progress-audio {
+            flex: 1;
+            height: 4px;
+            background: rgba(200,16,46,0.15);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-audio-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--clr-red), var(--clr-red-bright));
+            border-radius: var(--radius-full);
+            width: 0%;
+            transition: width 0.1s linear;
+            pointer-events: none;
+        }
+        .time-display {
+            font-size: 0.75rem;
+            color: var(--clr-text-muted);
+            white-space: nowrap;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        /* hidden native audio */
+        #audioPlayer { display: none; }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-download {
+            height: 44px;
+            padding: 0 1.4rem;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+        .btn-download.main {
+            background: linear-gradient(135deg, var(--clr-red) 0%, var(--clr-red-dark) 100%);
+            color: #fff;
+            border: none;
+        }
+        .btn-download.main:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-red);
+        }
+        .btn-download.ghost {
+            background: transparent;
+            border: 1.5px solid var(--clr-border);
+            color: var(--clr-text-muted);
+        }
+        .btn-download.ghost:hover {
+            border-color: var(--clr-red);
+            color: var(--clr-text);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           FEATURES SECTION
+        ═══════════════════════════════════════════════════════════════ */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .features-grid { grid-template-columns: 1fr; }
+        }
+
+        .feature-item {
+            padding: 1.2rem;
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(200,16,46,0.12);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+        .feature-item:hover {
+            border-color: rgba(200,16,46,0.3);
+            background: rgba(200,16,46,0.04);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 1.6rem;
+            margin-bottom: 0.6rem;
+            filter: drop-shadow(0 0 6px rgba(200,16,46,0.4));
+        }
+        .feature-item h4 {
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--clr-text);
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
+        }
+        .feature-item p {
+            font-size: 0.75rem;
+            color: var(--clr-text-muted);
+            line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           TOAST NOTIFICATIONS
+        ═══════════════════════════════════════════════════════════════ */
+        #toastContainer {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 340px;
+        }
+
+        .toast {
+            background: var(--clr-card);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,16,46,0.08);
+            animation: toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .toast:hover { transform: translateX(-4px); }
+        .toast.toast-out {
+            animation: toast-out 0.25s ease forwards;
+        }
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(100%); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes toast-out {
+            to { opacity: 0; transform: translateX(110%); }
+        }
+
+        .toast-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+        .toast-msg {
+            flex: 1;
+            font-size: 0.82rem;
+            color: var(--clr-text);
+            line-height: 1.4;
+        }
+        .toast.success { border-left: 3px solid #22c55e; }
+        .toast.error   { border-left: 3px solid var(--clr-red-bright); }
+        .toast.warning { border-left: 3px solid var(--clr-gold); }
+        .toast.info    { border-left: 3px solid #60a5fa; }
+
+        /* ═══════════════════════════════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════════════════════════════ */
+        footer {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--clr-border);
+            font-size: 0.75rem;
+            color: var(--clr-text-dim);
+        }
+        footer span { color: var(--clr-red-bright); }
+
+        /* ═══════════════════════════════════════════════════════════════
+           ANIMATIONS
+        ═══════════════════════════════════════════════════════════════ */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes fade-up {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════════════════════════════ */
+        @media (max-width: 520px) {
+            .url-row { flex-direction: column; }
+            .btn-cover { width: 100%; justify-content: center; height: 48px; }
+            .url-field { height: 48px; }
+            .result-actions { flex-direction: column; }
+            .btn-download { width: 100%; justify-content: center; }
+        }
+
+        /* Glowing red corner accent */
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -1px; right: -1px;
+            width: 60px; height: 60px;
+            background: linear-gradient(225deg, rgba(200,16,46,0.18) 0%, transparent 60%);
+            border-radius: 0 var(--radius-lg) 0 0;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header" id="header">
+
+    <!-- Particle canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+    <header class="header">
         <div class="header-inner">
-            <div class="logo" id="logo">
-                <svg class="logo-icon" width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <defs>
-                        <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36">
-                            <stop offset="0%" stop-color="#7c3aed"/>
-                            <stop offset="100%" stop-color="#06b6d4"/>
-                        </linearGradient>
-                    </defs>
-                    <rect width="36" height="36" rx="10" fill="url(#logoGrad)"/>
-                    <path d="M10 12 L16 18 L10 24" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M18 24 H26" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <a class="logo" href="#">
+                <!-- Kurumi clock logo -->
+                <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" stroke="#c8102e" stroke-width="1.5" stroke-dasharray="4 2"/>
+                    <circle cx="20" cy="20" r="14" stroke="rgba(200,16,46,0.35)" stroke-width="1"/>
+                    <circle cx="20" cy="20" r="2" fill="#e8243a"/>
+                    <!-- Roman numeral tick marks -->
+                    <line x1="20" y1="4"  x2="20" y2="7"  stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="20" y1="33" x2="20" y2="36" stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="4"  y1="20" x2="7"  y2="20" stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="33" y1="20" x2="36" y2="20" stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Hour hand -->
+                    <line x1="20" y1="20" x2="26" y2="14" stroke="#e8243a" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Minute hand -->
+                    <line x1="20" y1="20" x2="20" y2="10" stroke="#d4a843" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-                <span class="logo-text">Viet<span class="logo-highlight">Dub</span></span>
+                <div>
+                    <div class="logo-name">Kurumi <span class="accent">Music</span></div>
+                    <div class="logo-subtitle">時崎狂三 AI Cover</div>
+                </div>
+            </a>
+            <div class="header-badge">
+                <span class="dot"></span>
+                AI Voice Active
             </div>
-            <nav class="nav">
-                <span class="nav-badge" id="browserBadge">
-                    <span class="badge-dot"></span>
-                    <span id="browserStatus">Đang kiểm tra...</span>
-                </span>
-            </nav>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main" id="main">
-        <!-- Upload Section -->
-        <section class="upload-section" id="uploadSection">
-            <div class="upload-hero">
-                <h1 class="hero-title">
-                    Dịch Video Sang
-                    <span class="gradient-text">Tiếng Việt</span>
+    <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+    <main>
+        <div class="container">
+
+            <!-- HERO -->
+            <section class="hero">
+                <p class="hero-eyebrow fade-up">Tokisaki Kurumi · Date A Live</p>
+                <h1 class="hero-title fade-up delay-1">
+                    <span class="line1">Turn Any Song Into</span>
+                    <span class="line2">A Kurumi Cover</span>
                 </h1>
-                <p class="hero-subtitle">Upload video → Nhận dạng giọng nói → Dịch tự động → Phát âm thanh tiếng Việt</p>
-            </div>
-
-            <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Kéo thả hoặc click để chọn video">
-                <div class="upload-icon">
-                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                        <circle cx="32" cy="32" r="30" stroke="url(#uploadGrad)" stroke-width="2" stroke-dasharray="8 4"/>
-                        <defs>
-                            <linearGradient id="uploadGrad" x1="0" y1="0" x2="64" y2="64">
-                                <stop offset="0%" stop-color="#7c3aed"/>
-                                <stop offset="100%" stop-color="#06b6d4"/>
-                            </linearGradient>
-                        </defs>
-                        <path d="M32 20V44M24 28L32 20L40 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                <p class="hero-desc fade-up delay-2">
+                    Paste a YouTube link or upload your audio file.
+                    Our AI will transform the vocals into Kurumi Tokisaki's enchanting voice.
+                </p>
+                <div class="clock-ornament fade-up delay-3">
+                    <div class="ornament-line"></div>
+                    <div class="ornament-diamond"></div>
+                    <div class="ornament-line"></div>
                 </div>
-                <p class="upload-text">Kéo thả video vào đây</p>
-                <p class="upload-subtext">hoặc <span class="upload-link">click để chọn file</span></p>
-                <p class="upload-formats">Hỗ trợ: MP4, WebM, OGG, MOV</p>
-                <input type="file" id="fileInput" accept="video/*" hidden>
-            </div>
+            </section>
 
-            <!-- Separator -->
-            <div class="upload-separator">
-                <span class="separator-line"></span>
-                <span class="separator-text">HOẶC</span>
-                <span class="separator-line"></span>
-            </div>
-
-            <!-- URL Input -->
-            <div class="url-input-section" id="urlInputSection">
-                <div class="url-input-wrapper">
-                    <div class="url-icons">
-                        <span class="url-platform-icon" title="YouTube">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        </span>
-                        <span class="url-platform-icon" title="TikTok">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.87a8.28 8.28 0 0 0 4.76 1.5V6.93a4.84 4.84 0 0 1-1-.24z"/></svg>
-                        </span>
+            <!-- INPUT CARD -->
+            <div class="card input-card fade-up delay-3" id="inputCard">
+                <!-- URL Input -->
+                <div class="input-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8102e" stroke-width="2.5">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    Paste Music Link
+                </div>
+                <div class="url-row">
+                    <div class="url-field-wrap">
+                        <div class="url-icon-prefix">
+                            <!-- YouTube icon -->
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#ff4444"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.5 15.6V8.4L16 12l-6.5 3.6z"/></svg>
+                        </div>
+                        <input
+                            type="url"
+                            id="urlInput"
+                            class="url-field"
+                            placeholder="https://youtube.com/watch?v=... or any music URL"
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
                     </div>
-                    <input type="text" class="url-input" id="urlInput" placeholder="Dán link YouTube hoặc TikTok vào đây..." autocomplete="off">
-                    <button class="btn btn-primary url-submit-btn" id="btnUrlSubmit">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9h12M11 5l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <button class="btn-cover btn-primary" id="btnGenerate">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
                         </svg>
-                        Lấy Video
+                        Generate Cover
                     </button>
                 </div>
-                <p class="url-hint">Hỗ trợ: youtube.com, youtu.be, tiktok.com, instagram.com</p>
-            </div>
 
-            <!-- Features -->
-            <div class="features">
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">🧠</div>
-                    <h3>AI Nhận Dạng Giọng Nói</h3>
-                    <p>Tự động tách và nhận dạng âm thanh bằng mô hình Whisper AI (chạy ngầm)</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">🌐</div>
-                    <h3>Dịch Tự Động</h3>
-                    <p>Dịch nội dung sang tiếng Việt chính xác và tự nhiên</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">🔊</div>
-                    <h3>Giọng Đọc Tiếng Việt</h3>
-                    <p>Phát âm thanh tiếng Việt đồng bộ với video gốc</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Workspace Section (hidden initially) -->
-        <section class="workspace" id="workspace" hidden>
-            <div class="workspace-grid">
-                <!-- Video Player -->
-                <div class="video-container" id="videoContainer">
-                    <video id="videoPlayer" crossorigin="anonymous">
-                        Your browser does not support the video tag.
-                    </video>
-                    <div class="subtitle-overlay" id="subtitleOverlay">
-                        <p class="subtitle-original" id="subtitleOriginal"></p>
-                        <p class="subtitle-vietnamese" id="subtitleVietnamese"></p>
-                    </div>
-                    <div class="video-controls" id="videoControls">
-                        <button class="btn-icon" id="btnPlayPause" title="Phát/Dừng">
-                            <svg class="icon-play" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M6 4L16 10L6 16V4Z"/>
-                            </svg>
-                            <svg class="icon-pause" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" hidden>
-                                <path d="M5 4H8V16H5zM12 4H15V16H12z"/>
-                            </svg>
-                        </button>
-                        <div class="video-progress" id="videoProgress">
-                            <div class="video-progress-fill" id="videoProgressFill"></div>
-                        </div>
-                        <span class="video-time" id="videoTime">0:00 / 0:00</span>
-                        <button class="btn-icon" id="btnMuteOriginal" title="Tắt/Bật âm thanh gốc">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 3L5 7H2V13H5L10 17V3Z"/>
-                                <path class="sound-wave" d="M13 7C14.5 8.5 14.5 11.5 13 13M15 5C18 8 18 12 15 15" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                    </div>
+                <!-- Separator -->
+                <div class="separator">
+                    <div class="separator-line"></div>
+                    <span class="separator-text">or upload audio</span>
+                    <div class="separator-line"></div>
                 </div>
 
-                <!-- Control Panel -->
-                <div class="control-panel" id="controlPanel">
-                    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h2 class="panel-title" style="margin-bottom: 0;">⚙️ Bảng Điều Khiển</h2>
-                        <button class="btn-icon" id="btnSettings" title="Cài đặt hệ thống" style="padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- File info -->
-                    <div class="file-info" id="fileInfo">
-                        <div class="file-name" id="fileName">video.mp4</div>
-                        <div class="file-meta" id="fileMeta">0 MB • 0:00</div>
-                    </div>
-
-                    <!-- Language Selection -->
-                    <div class="control-group">
-                        <label class="control-label" for="sourceLang">Ngôn ngữ gốc</label>
-                        <select class="select-input" id="sourceLang">
-                            <option value="en-US">🇺🇸 English (US)</option>
-                            <option value="en-GB">🇬🇧 English (UK)</option>
-                            <option value="ja">🇯🇵 日本語 (Japanese)</option>
-                            <option value="ko">🇰🇷 한국어 (Korean)</option>
-                            <option value="zh-CN">🇨🇳 中文 (Chinese)</option>
-                            <option value="fr">🇫🇷 Français (French)</option>
-                            <option value="de">🇩🇪 Deutsch (German)</option>
-                            <option value="es">🇪🇸 Español (Spanish)</option>
-                            <option value="th">🇹🇭 ไทย (Thai)</option>
-                            <option value="ru">🇷🇺 Русский (Russian)</option>
-                            <option value="pt">🇵🇹 Português (Portuguese)</option>
-                            <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
-                        </select>
-                    </div>
-                    <!-- Voice Status -->
-                    <div class="control-group">
-                        <label class="control-label">Gi\u1ecdng \u0111\u1ecdc ti\u1ebfng Vi\u1ec7t</label>
-                        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;">
-                            <span style="font-size:18px;">🎙️</span>
-                            <div style="flex:1">
-                                <div style="color:#10b981;font-weight:600;font-size:13px;">Gi\u1ecdng N\u1eef (T\u1ef1 \u0111\u1ed9ng)</div>
-                                <div id="voiceActiveName" style="color:rgba(255,255,255,0.5);font-size:11px;">Kurumi AI (khi Applio b\u1eadt) · Google TTS n\u1eef (d\u1ef1 ph\u00f2ng)</div>
-                            </div>
-                        </div>
-                        <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.4);">
-                            💡 M\u1edf b\u1eb1ng <b style="color:#7c3aed">Microsoft Edge</b> \u0111\u1ec3 d\u00f9ng gi\u1ecdng <b style="color:#06b6d4">HoaiMy Neural</b> cao c\u1ea5p s\u1eb5n c\u00f3 tr\u00ean m\u00e1y!
-                        </div>
-                        <!-- Hidden select for compatibility -->
-                        <select class="select-input" id="vnVoice" style="display:none;"></select>
-                    </div>
-
-                    <!-- Anime Voice Hack -->
-                    <div class="control-group checkbox-group">
-                        <label class="checkbox-label" title="Dùng AI (Fish Audio hoặc Local) để giả giọng Kurumi">
-                            <input type="checkbox" id="animeVoiceToggle">
-                            <span class="custom-checkbox"></span>
-                            Giọng Kurumi Tokisaki (AI) 🌸
-                        </label>
-                    </div>
-
-                    <!-- Speech Rate -->
-                    <div class="control-group">
-                        <label class="control-label">Tốc độ đọc: <span id="rateValue">1.0x</span></label>
-                        <input type="range" class="range-input" id="speechRate" min="0.5" max="2" step="0.1" value="1">
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <button class="btn btn-primary glow-effect" id="btnStartProcess">
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                <path d="M9 1L11 7H17L12 11L14 17L9 13L4 17L6 11L1 7H7L9 1Z"/>
-                            </svg>
-                            Bắt Đầu Dịch
-                        </button>
-                        <button class="btn btn-secondary" id="btnPlayVN" disabled>
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                                <path d="M4 2L15 9L4 16V2Z"/>
-                            </svg>
-                            Phát Giọng Việt
-                        </button>
-                        <button class="btn btn-secondary" id="btnExportSRT" disabled>
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M3 13V15H15V13M9 3V11M6 8L9 11L12 8" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Xuất Phụ Đề SRT
-                        </button>
-                        <button class="btn btn-secondary" id="btnNewVideo">
-                            🔄 Video Mới
-                        </button>
-                    </div>
-
-                    <!-- Processing Status -->
-                    <div class="processing-status" id="processingStatus" hidden>
-                        <div class="status-header">
-                            <span class="status-badge processing" id="statusBadge">
-                                <span class="badge-dot"></span>
-                                <span id="statusText">Đang xử lý...</span>
-                            </span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <p class="status-detail" id="statusDetail">Đang chuẩn bị...</p>
-                    </div>
+                <!-- File Drop Zone -->
+                <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drop audio file or click to select">
+                    <span class="drop-zone-icon">🎵</span>
+                    <p>Drop your audio file here or <span class="highlight">click to browse</span></p>
+                    <p style="font-size:0.72rem;margin-top:4px;opacity:0.6;">Supports MP3, WAV, OGG, FLAC, M4A</p>
+                    <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a">
                 </div>
             </div>
 
-            <!-- Transcript Section -->
-            <div class="transcript-section" id="transcriptSection">
-                <div class="transcript-header">
-                    <h2 class="panel-title">📝 Bản Dịch</h2>
-                    <div class="transcript-actions">
-                        <button class="btn btn-icon" id="btnToggleEdit" title="Chỉnh sửa">✏️</button>
-                        <button class="btn btn-icon" id="btnClearTranscript" title="Xóa tất cả">🗑️</button>
+            <!-- PROCESSING PANEL -->
+            <div class="card fade-up delay-4" id="processingPanel">
+                <!-- Clock Spinner -->
+                <div class="clock-spinner">
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring-2"></div>
+                    <div class="clock-face">
+                        <div class="clock-ticks" id="clockTicks"></div>
+                        <div class="clock-hand-hour"></div>
+                        <div class="clock-hand-min"></div>
+                        <div class="clock-center"></div>
                     </div>
                 </div>
-
-                <div class="transcript-grid">
-                    <!-- Original Text -->
-                    <div class="transcript-column">
-                        <h3 class="column-title">Văn bản gốc</h3>
-                        <div class="segment-list" id="segmentListOriginal">
-                            <div class="empty-state">
-                                <p>Chưa có nội dung. Nhấn "Bắt Đầu Dịch" để bắt đầu.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Vietnamese Translation -->
-                    <div class="transcript-column">
-                        <h3 class="column-title">Bản dịch Tiếng Việt</h3>
-                        <div class="segment-list" id="segmentListVietnamese">
-                            <div class="empty-state">
-                                <p>Bản dịch sẽ hiển thị ở đây.</p>
-                            </div>
-                        </div>
-                    </div>
+                <p class="processing-title">Kurumi is singing...</p>
+                <p class="processing-sub" id="processingMsg">Sending request to AI server...</p>
+                <div class="progress-track">
+                    <div class="progress-fill-bar" id="progressBar"></div>
                 </div>
             </div>
-        </section>
+
+            <!-- RESULT PANEL -->
+            <div class="card result-card fade-up" id="resultPanel">
+                <div class="result-header">
+                    <div class="result-avatar">🎭</div>
+                    <div class="result-info">
+                        <h3>Kurumi Tokisaki</h3>
+                        <p id="resultSourceLabel">AI Vocal Cover</p>
+                    </div>
+                    <span class="result-badge">✓ Ready</span>
+                </div>
+
+                <!-- Custom Audio Player -->
+                <div class="audio-player">
+                    <div class="audio-waveform" id="waveformDisplay"></div>
+                    <div class="player-controls">
+                        <button class="btn-play-round" id="btnPlayPause" title="Play / Pause">
+                            <svg id="iconPlay" width="14" height="14" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <svg id="iconPause" width="14" height="14" viewBox="0 0 24 24" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                        </button>
+                        <div class="progress-audio" id="audioProgress">
+                            <div class="progress-audio-fill" id="audioProgressFill"></div>
+                        </div>
+                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                    </div>
+                </div>
+
+                <audio id="audioPlayer"></audio>
+
+                <div class="result-actions">
+                    <a href="#" class="btn-download main" id="btnDownload" download="kurumi-cover.wav">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download WAV
+                    </a>
+                    <button class="btn-download ghost" id="btnNewCover">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+                        </svg>
+                        New Cover
+                    </button>
+                </div>
+            </div>
+
+            <!-- FEATURES -->
+            <div class="features-grid fade-up delay-4">
+                <div class="feature-item">
+                    <div class="feature-icon">🕐</div>
+                    <h4>Instant Processing</h4>
+                    <p>Kurumi's AI voice is generated in seconds via our local RVC pipeline.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎭</div>
+                    <h4>True Voice Model</h4>
+                    <p>Authentic Kurumi Tokisaki voice model trained on Date A Live audio.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🌹</div>
+                    <h4>High Fidelity WAV</h4>
+                    <p>Download lossless WAV output for the highest quality experience.</p>
+                </div>
+            </div>
+
+        </div>
     </main>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Settings Modal -->
-    <div class="modal-overlay" id="settingsModal" hidden>
-        <div class="modal">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="margin: 0; color: var(--color-primary);">⚙️ Cài đặt hệ thống</h3>
-                <button class="btn-icon" id="btnCloseSettings" style="background: none;">✖</button>
-            </div>
-            <div class="modal-body">
-                <div class="control-group">
-                    <label class="control-label">Nguồn giọng AI (Backend)</label>
-                    <select id="ttsBackendSelect" class="select-input" style="width: 100%; margin-bottom: 1rem;">
-                        <option value="fish">Fish Audio API (Cần Credit)</option>
-                        <option value="local">Local AI (Chạy trên máy tính)</option>
-                    </select>
-                </div>
-
-                <div class="control-group" id="groupFishApi">
-                    <label class="control-label">Fish Audio API Key</label>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
-                        Để dùng giọng Kurumi, lấy API Key tại <a href="https://fish.audio/app/api-keys/" target="_blank" style="color: var(--color-accent); text-decoration: underline;">Fish Audio</a>
-                    </p>
-                    <input type="password" id="fishApiKeyInput" class="select-input" placeholder="Dán mã API Key của bạn vào đây..." style="width: 100%; margin-bottom: 1rem;">
-                </div>
-
-                <div class="control-group" id="groupLocalApi" style="display: none;">
-                    <label class="control-label">Local API URL</label>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">
-                        Nhập địa chỉ phần mềm AI đang chạy trên máy tính của bạn (VD: Applio, RVC WebUI). Mặc định là cổng 5000.
-                    </p>
-                    <input type="text" id="localApiUrlInput" class="select-input" placeholder="http://127.0.0.1:5000/tts" value="http://127.0.0.1:5000/tts" style="width: 100%; margin-bottom: 1rem;">
-                </div>
-            </div>
-            <div class="modal-footer" style="text-align: right;">
-                <button class="btn btn-primary" id="btnSaveSettings">Lưu cài đặt</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <p>VietDub — Dịch video sang tiếng Việt miễn phí | Sử dụng Whisper AI (Transformers.js) & MyMemory</p>
+    <!-- FOOTER -->
+    <footer>
+        <span>Kurumi Music Cover</span> · 時崎狂三 AI · Powered by Applio RVC · By Minh
     </footer>
 
-    <script type="module" src="app.js"></script>
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>
