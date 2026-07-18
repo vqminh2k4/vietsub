@@ -192,21 +192,18 @@
 
     // ─── Browser Compatibility Check ─────────────────────────────────
     function checkBrowserSupport() {
-        const hasSpeechRecognition = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
         const hasSpeechSynthesis = 'speechSynthesis' in window;
+        const hasWebAudio = 'AudioContext' in window || 'webkitAudioContext' in window;
 
-        if (hasSpeechRecognition && hasSpeechSynthesis) {
+        if (hasSpeechSynthesis && hasWebAudio) {
             els.browserBadge.classList.add('badge-success');
             els.browserStatus.textContent = 'Trình duyệt hỗ trợ đầy đủ';
         } else {
             els.browserBadge.classList.add('badge-warning');
-            const missing = [];
-            if (!hasSpeechRecognition) missing.push('Speech Recognition');
-            if (!hasSpeechSynthesis) missing.push('Speech Synthesis');
-            els.browserStatus.textContent = `Thiếu: ${missing.join(', ')}`;
-            showToast('Trình duyệt không hỗ trợ đầy đủ. Vui lòng dùng Chrome hoặc Edge.', 'warning');
+            els.browserStatus.textContent = `Thiếu Web Audio hoặc Speech Synthesis`;
+            showToast('Trình duyệt không hỗ trợ đầy đủ. Vui lòng dùng Chrome, Edge hoặc Safari mới nhất.', 'warning');
         }
-        return hasSpeechRecognition && hasSpeechSynthesis;
+        return hasSpeechSynthesis && hasWebAudio;
     }
 
     // ─── Populate Source Language Dropdown ────────────────────────────
@@ -591,112 +588,103 @@
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
     }
+    // ─── Whisper AI Recognition ─────────────────────────────────────────
+    let whisperPipeline = null;
 
-    // ─── Speech Recognition ──────────────────────────────────────────
-    function createRecognition() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return null;
+    async function loadWhisper() {
+        if (whisperPipeline) return whisperPipeline;
 
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
-
-        return recognition;
+        try {
+            updateProgress(0, 'Đang tải thư viện Transformers.js...');
+            const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+            
+            // Tối ưu môi trường cho trình duyệt
+            env.allowLocalModels = false;
+            
+            updateProgress(10, 'Đang chuẩn bị mô hình Whisper AI...');
+            
+            whisperPipeline = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+                progress_callback: (data) => {
+                    if (data.status === 'progress') {
+                        const loaded = Math.round(data.progress);
+                        updateProgress(loaded, `Đang tải bộ não AI: ${loaded}% (Lần đầu sẽ mất vài phút)`);
+                    }
+                }
+            });
+            
+            return whisperPipeline;
+        } catch (error) {
+            console.error('Failed to load Whisper:', error);
+            throw new Error('Không thể tải mô hình AI. Vui lòng kiểm tra kết nối mạng.');
+        }
     }
 
-    async function startSpeechRecognition() {
-        return new Promise((resolve, reject) => {
-            const recognition = createRecognition();
-            if (!recognition) {
-                reject(new Error('Speech Recognition không được hỗ trợ'));
-                return;
-            }
+    async function extractAudio(videoUrl) {
+        updateProgress(50, 'Đang trích xuất âm thanh từ video...');
+        
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext({ sampleRate: 16000 });
+            
+            const response = await fetch(videoUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            
+            updateProgress(80, 'Đang giải mã âm thanh...');
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            
+            // Whisper yêu cầu Float32Array ở 16kHz
+            return audioBuffer.getChannelData(0);
+        } catch (error) {
+            console.error('Audio extraction error:', error);
+            throw new Error('Không thể đọc âm thanh từ video này. Hãy thử video khác.');
+        }
+    }
 
-            const lang = els.sourceLang.value;
-            recognition.lang = lang;
+    async function startWhisperRecognition() {
+        const transcriber = await loadWhisper();
+        
+        const audioData = await extractAudio(state.videoURL);
+        
+        updateStatus('processing', 'AI Đang Nhận Dạng...');
+        updateProgress(90, 'Đang phân tích giọng nói (Quá trình này phụ thuộc vào máy tính của bạn)...');
 
-            const results = [];
-            let segmentStart = 0;
-            let lastResultTime = Date.now();
+        const lang = els.sourceLang.value; // e.g. "en-US"
+        const langCode = lang.split('-')[0]; // "en"
 
-            recognition.onresult = (event) => {
-                lastResultTime = Date.now();
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        const text = event.results[i][0].transcript.trim();
-                        if (text) {
-                            const currentTime = els.videoPlayer.currentTime;
-                            results.push({
-                                id: generateId(),
-                                startTime: segmentStart,
-                                endTime: currentTime,
-                                originalText: text,
-                                vietnameseText: '',
-                            });
-                            segmentStart = currentTime;
-
-                            // Update UI in real-time
-                            updateProgress(
-                                Math.min(90, (currentTime / els.videoPlayer.duration) * 100),
-                                `Đã nhận dạng: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`
-                            );
-                            renderSegments(results);
-                        }
-                    }
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.warn('Speech recognition error:', event.error);
-                if (event.error === 'no-speech') {
-                    // Continue listening
-                    return;
-                }
-                if (event.error !== 'aborted') {
-                    showToast(`Lỗi nhận dạng: ${event.error}`, 'warning');
-                }
-            };
-
-            recognition.onend = () => {
-                if (state.isProcessing && els.videoPlayer.currentTime < els.videoPlayer.duration - 0.5) {
-                    // Restart if video is still playing
-                    try {
-                        recognition.start();
-                    } catch (e) {
-                        console.warn('Could not restart recognition:', e);
-                    }
-                } else {
-                    resolve(results);
-                }
-            };
-
-            // Start playing video and recognition
-            els.videoPlayer.currentTime = 0;
-            els.videoPlayer.play();
-            recognition.start();
-
-            state.recognition = recognition;
-
-            // Monitor video end
-            els.videoPlayer.addEventListener('ended', () => {
-                setTimeout(() => {
-                    try {
-                        recognition.stop();
-                    } catch (e) { }
-                    resolve(results);
-                }, 1500);
-            }, { once: true });
-
-            // Also set a safety timeout based on video duration
-            const safetyTimeout = (els.videoPlayer.duration + 10) * 1000;
-            setTimeout(() => {
-                if (state.isProcessing) {
-                    try { recognition.stop(); } catch (e) { }
-                    resolve(results);
-                }
-            }, safetyTimeout);
+        const output = await transcriber(audioData, {
+            chunk_length_s: 30,
+            stride_length_s: 5,
+            return_timestamps: true,
+            language: langCode,
+            task: 'transcribe',
         });
+
+        if (!output.chunks || output.chunks.length === 0) {
+            // Nếu không có chunks, thử tự tạo chunk từ text
+            if (output.text && output.text.trim().length > 0) {
+                return [{
+                    id: generateId(),
+                    startTime: 0,
+                    endTime: els.videoPlayer.duration || 5,
+                    originalText: output.text.trim(),
+                    vietnameseText: '',
+                }];
+            }
+            throw new Error('Không nhận diện được giọng nói nào trong video.');
+        }
+
+        const results = output.chunks.map(chunk => {
+            return {
+                id: generateId(),
+                startTime: chunk.timestamp[0],
+                endTime: chunk.timestamp[1] || (chunk.timestamp[0] + 3), // fallback 3 giây nếu không có end
+                originalText: chunk.text.trim(),
+                vietnameseText: '',
+            };
+        });
+
+        // Lọc bỏ câu trống
+        return results.filter(r => r.originalText.length > 0);
     }
 
     // ─── Translation ─────────────────────────────────────────────────
@@ -840,10 +828,9 @@
 
         try {
             // Step 1: Speech Recognition
-            updateStatus('processing', 'Đang nhận dạng giọng nói...');
-            updateProgress(5, 'Đang phát video và nhận dạng giọng nói...');
-
-            const rawSegments = await startSpeechRecognition();
+            updateStatus('processing', 'Khởi động AI...');
+            
+            const rawSegments = await startWhisperRecognition();
 
             if (rawSegments.length === 0) {
                 showToast('Không nhận dạng được giọng nói. Hãy thử chọn đúng ngôn ngữ gốc hoặc kiểm tra video có âm thanh.', 'warning');
