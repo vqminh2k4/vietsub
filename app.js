@@ -785,6 +785,26 @@
         return URL.createObjectURL(blob);
     }
 
+    function fallbackTTS(text, resolve) {
+        if (!state.synth) { resolve(); return; }
+        state.synth.cancel(); 
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'vi-VN';
+        utterance.rate = state.speechRate;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        if (state.selectedVoice) {
+            utterance.voice = state.selectedVoice;
+        }
+
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+
+        state.synth.speak(utterance);
+    }
+
     function speakVietnamese(text) {
         return new Promise(async (resolve) => {
             if (state.currentAudio) {
@@ -811,6 +831,12 @@
                     audioUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=${encodeURIComponent(text)}`;
                 }
 
+                // Google TTS has a ~200 character limit. Fallback directly if text is too long.
+                if (!isFishAudio && text.length > 200) {
+                    console.warn("Câu quá dài đối với Google TTS, lùi về giọng mặc định của máy");
+                    return fallbackTTS(text, resolve);
+                }
+
                 const audio = new Audio(audioUrl);
                 
                 if (isAnimeMode && !isFishAudio) {
@@ -822,7 +848,6 @@
                 } else if (!isFishAudio) {
                     audio.playbackRate = state.speechRate;
                 }
-                // Nếu là Fish Audio, giữ nguyên vì nó đã là giọng Kurumi chuẩn
                 
                 state.currentAudio = audio;
                 
@@ -833,18 +858,18 @@
                 };
                 
                 audio.onerror = () => {
-                    console.warn("Lỗi tải âm thanh, bỏ qua đọc câu này.");
-                    resolve();
+                    console.warn("Lỗi tải âm thanh online, lùi về giọng mặc định của máy.");
+                    fallbackTTS(text, resolve);
                 };
                 
                 audio.play().catch(e => {
-                    console.warn("Lỗi phát âm thanh:", e);
-                    resolve();
+                    console.warn("Lỗi phát âm thanh online, lùi về giọng mặc định của máy:", e);
+                    fallbackTTS(text, resolve);
                 });
 
             } catch (error) {
                 console.error(error);
-                resolve();
+                fallbackTTS(text, resolve);
             }
         });
     }
