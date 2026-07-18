@@ -865,49 +865,49 @@
             let done = false;
             const finish = () => { if (!done) { done = true; resolve(); } };
 
-            // Dừng audio cũ nếu đang phát
             if (state.currentAudio) {
                 state.currentAudio.pause();
                 state.currentAudio = null;
             }
 
-            const ttsBackend = localStorage.getItem('ttsBackend') || 'local';
-            const localApiUrl = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:6969';
+            // URL Kurumi server (mặc định port 7869)
+            const kurumiUrl = localStorage.getItem('localApiUrl') || 'http://127.0.0.1:7869';
             const fishApiKey = localStorage.getItem('fishApiKey');
+            const ttsBackend = localStorage.getItem('ttsBackend') || 'local';
 
-            // ── Ưu tiên 1: Kurumi (Applio Local AI) ──
-            if (ttsBackend === 'local') {
-                try {
-                    const url = await getLocalAudioStream(text, localApiUrl);
-                    const audio = new Audio(url);
-                    audio.playbackRate = parseFloat(state.speechRate) || 1;
-                    state.currentAudio = audio;
-                    audio.onended = () => { URL.revokeObjectURL(url); state.currentAudio = null; finish(); };
-                    audio.onerror = () => { URL.revokeObjectURL(url); playGoogleTTS(text, finish); };
-                    await audio.play();
-                    return;
-                } catch (e) {
-                    console.warn('⚠️ Applio chưa bật:', e.message);
-                }
+            function playBlob(url) {
+                // Hàm phát audio và chờ cho đến khi kết thúc mới resolve
+                const audio = new Audio(url);
+                audio.playbackRate = parseFloat(state.speechRate) || 1;
+                state.currentAudio = audio;
+                // onended mới resolve Promise — đây là điểm mấu chốt!
+                audio.onended = () => { URL.revokeObjectURL(url); state.currentAudio = null; finish(); };
+                audio.onerror = () => { URL.revokeObjectURL(url); playGoogleTTS(text, finish); };
+                // Dùng .catch() thay vì await — không chặn onended
+                audio.play().catch(() => playGoogleTTS(text, finish));
             }
 
-            // ── Ưu tiên 2: Fish Audio ──
+            // Ưu tiên 1: Kurumi Server (luôn thử trước)
+            try {
+                const url = await getLocalAudioStream(text, kurumiUrl);
+                playBlob(url);
+                return; // Promise vẫn pending, sẽ resolve qua onended
+            } catch (e) {
+                console.warn('⚠️ Kurumi Server chưa bật:', e.message);
+            }
+
+            // Ưu tiên 2: Fish Audio
             if (ttsBackend === 'fish' && fishApiKey) {
                 try {
                     const url = await getFishAudioStream(text, fishApiKey);
-                    const audio = new Audio(url);
-                    audio.playbackRate = parseFloat(state.speechRate) || 1;
-                    state.currentAudio = audio;
-                    audio.onended = () => { URL.revokeObjectURL(url); state.currentAudio = null; finish(); };
-                    audio.onerror = () => { URL.revokeObjectURL(url); playGoogleTTS(text, finish); };
-                    await audio.play();
+                    playBlob(url);
                     return;
                 } catch (e) {
                     console.warn('⚠️ Fish Audio lỗi:', e.message);
                 }
             }
 
-            // ── Dự phòng: Google TTS giọng Nữ ──
+            // Dự phòng: Google TTS giọng Nữ
             playGoogleTTS(text, finish);
         });
     }
