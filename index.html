@@ -501,6 +501,23 @@
         ::-webkit-scrollbar-track { background: var(--clr-bg); }
         ::-webkit-scrollbar-thumb { background: rgba(255,42,58,0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,42,58,0.5); }
+        
+        /* RESPONSIVE HEIGHT (Fit to 1 screen) */
+        @media (max-height: 950px) {
+            html { font-size: 14px; }
+            .header { padding: 1rem 3rem; }
+            .hero-title { margin-bottom: 0.8rem; }
+            .hero-desc { margin-bottom: 1.5rem; }
+        }
+        @media (max-height: 800px) {
+            html { font-size: 12px; }
+            .header { padding: 0.5rem 3rem; }
+            main { padding: 0 2rem; }
+        }
+        @media (max-height: 650px) {
+            html { font-size: 10px; }
+            .header { display: none; } /* Hide header on extremely short screens */
+        }
     
     </style>
 </head>
