@@ -611,6 +611,15 @@
             min-height: 1.2em;
             transition: var(--transition);
         }
+        .processing-timer {
+            color: var(--clr-accent);
+            font-family: monospace;
+            font-size: 1.1rem;
+            margin-top: 12px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(220,38,38,0.5);
+        }
 
         /* Progress bar */
         .progress-track {
@@ -1090,6 +1099,7 @@
                 <div class="progress-track">
                     <div class="progress-fill-bar" id="progressBar"></div>
                 </div>
+                <p class="processing-timer" id="processingTimer">00:00</p>
             </div>
 
             <!-- RESULT PANEL -->

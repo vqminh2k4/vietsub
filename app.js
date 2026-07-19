@@ -267,8 +267,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let progressSim = 0;
+    let startTime = 0;
     function simulateProgress() {
         progressSim = 0;
+        startTime = Date.now();
+        const timerEl = document.getElementById('processingTimer');
+        
         state.progressInterval = setInterval(() => {
             progressSim += (100 - progressSim) * 0.05;
             els.progressBar.style.width = `${progressSim}%`;
@@ -276,6 +280,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (progressSim > 20 && progressSim < 50) els.processingMsg.textContent = 'Extracting vocals...';
             if (progressSim > 50 && progressSim < 80) els.processingMsg.textContent = 'Applying Kurumi voice model...';
             if (progressSim > 80) els.processingMsg.textContent = 'Finalizing audio...';
+            
+            if (timerEl) {
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+                const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
+                timerEl.textContent = `${mins}:${secs}`;
+            }
         }, 1000);
     }
 
