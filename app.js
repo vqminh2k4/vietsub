@@ -349,6 +349,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(data.error || "Server processing failed");
                 }
                 
+                if (data.status === 'pending_approval') {
+                    els.processingMsg.textContent = '⏳ Đang chờ Admin phê duyệt yêu cầu trên điện thoại...';
+                    els.progressBar.style.width = '100%';
+                    els.progressBar.style.animation = 'pulse 1s infinite alternate';
+                    if (timerEl) timerEl.textContent = `${eMin}:${eSec} · Xin chờ...`;
+                    return; // Skip other logic until approved
+                } else {
+                    // Xoa animation pulse neu da duyet
+                    els.progressBar.style.animation = '';
+                }
+                
                 if (data.status === 'done') {
                     clearInterval(state.progressInterval);
                     els.processingMsg.textContent = 'Downloading final MP3...';
