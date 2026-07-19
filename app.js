@@ -349,10 +349,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     els.progressBar.style.width = `${data.pct}%`;
                 }
 
-                // Show elapsed + ETA from server
+                // Show elapsed + estimated finish time
                 if (timerEl) {
                     if (data.eta && data.step === 'separating') {
-                        timerEl.textContent = `${eMin}:${eSec} · còn ~${data.eta}`;
+                        // Parse ETA "MM:SS" -> seconds remaining
+                        const parts = data.eta.split(':').map(Number);
+                        const etaSec = (parts[0] || 0) * 60 + (parts[1] || 0);
+                        const finishTime = new Date(Date.now() + etaSec * 1000);
+                        const hh = finishTime.getHours().toString().padStart(2, '0');
+                        const mm = finishTime.getMinutes().toString().padStart(2, '0');
+                        timerEl.textContent = `${eMin}:${eSec} · Dự kiến xong lúc ${hh}:${mm}`;
                     } else {
                         timerEl.textContent = `${eMin}:${eSec}`;
                     }
