@@ -207,9 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.isProcessing) return;
         state.isProcessing = true;
         
-        showProcessingPanel('Downloading and converting via YouTube...');
-        simulateProgress();
-
+        showProcessingPanel('Sending request to server...');
+        
         try {
             const response = await fetch(state.apiEndpoint, {
                 method: 'POST',
@@ -225,16 +224,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(err.error || `Server error: ${response.status}`);
             }
 
-            const blob = await response.blob();
-            showResult(blob, `Cover from URL`);
-            showToast('Conversion complete!', 'success');
+            const data = await response.json();
+            if (data.job_id) {
+                pollJob(data.job_id, `Cover from URL`);
+            } else {
+                throw new Error("No job_id returned");
+            }
         } catch (e) {
             console.error(e);
             showToast(e.message, 'error');
             resetUI();
-        } finally {
             state.isProcessing = false;
-            clearInterval(state.progressInterval);
         }
     }
 
@@ -242,9 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.isProcessing) return;
         state.isProcessing = true;
         
-        showProcessingPanel(`Uploading and converting ${file.name}...`);
-        simulateProgress(120); // Upto ~2 mins for direct files
-
+        showProcessingPanel(`Sending ${file.name} to server...`);
+        
         try {
             const base64Data = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -270,16 +269,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(err.error || `Server error: ${response.status}`);
             }
 
-            const blob = await response.blob();
-            showResult(blob, `Cover of ${file.name}`);
-            showToast('Conversion complete!', 'success');
+            const data = await response.json();
+            if (data.job_id) {
+                pollJob(data.job_id, `Cover of ${file.name}`);
+            } else {
+                throw new Error("No job_id returned");
+            }
         } catch (e) {
             console.error(e);
             showToast(e.message, 'error');
             resetUI();
-        } finally {
             state.isProcessing = false;
-            clearInterval(state.progressInterval);
         }
     }
 
@@ -318,13 +318,13 @@ document.addEventListener('DOMContentLoaded', () => {
         'encoding':    '🎧 Encoding MP3...',
     };
 
-    function simulateProgress() {
+    function pollJob(job_id, sourceText) {
         startTime = Date.now();
         const timerEl = document.getElementById('processingTimer');
 
         // Reset bar
         els.progressBar.style.width = '5%';
-        els.processingMsg.textContent = 'Sending request...';
+        els.processingMsg.textContent = 'Job started...';
         if (timerEl) timerEl.textContent = '00:00';
 
         state.progressInterval = setInterval(async () => {
@@ -334,38 +334,65 @@ document.addEventListener('DOMContentLoaded', () => {
             const eSec = (elapsedSec % 60).toString().padStart(2, '0');
 
             try {
-                const r = await fetch(state.serverUrl + '/progress', {
+                const r = await fetch(state.serverUrl + '/job/' + job_id, {
                     headers: { 'ngrok-skip-browser-warning': '1' }
                 });
                 if (!r.ok) throw new Error();
                 const data = await r.json();
 
-                // Update step label
-                const label = STEP_LABELS[data.step] || 'Processing...';
-                els.processingMsg.textContent = label;
-
-                // Update progress bar
-                if (data.pct > 0) {
-                    els.progressBar.style.width = `${data.pct}%`;
+                if (data.status === 'error') {
+                    throw new Error(data.error || "Server processing failed");
+                }
+                
+                if (data.status === 'done') {
+                    clearInterval(state.progressInterval);
+                    els.processingMsg.textContent = 'Downloading final MP3...';
+                    
+                    const dlRes = await fetch(state.serverUrl + '/download/' + job_id, {
+                        headers: { 'ngrok-skip-browser-warning': '1' }
+                    });
+                    if (!dlRes.ok) throw new Error("Download failed");
+                    
+                    const blob = await dlRes.blob();
+                    showResult(blob, sourceText);
+                    showToast('Conversion complete!', 'success');
+                    state.isProcessing = false;
+                    return;
                 }
 
-                // Show elapsed + estimated finish time
-                if (timerEl) {
-                    if (data.eta && data.step === 'separating') {
-                        // Parse ETA "MM:SS" -> seconds remaining
-                        const parts = data.eta.split(':').map(Number);
-                        const etaSec = (parts[0] || 0) * 60 + (parts[1] || 0);
-                        const finishTime = new Date(Date.now() + etaSec * 1000);
-                        const hh = finishTime.getHours().toString().padStart(2, '0');
-                        const mm = finishTime.getMinutes().toString().padStart(2, '0');
-                        timerEl.textContent = `${eMin}:${eSec} · Dự kiến xong lúc ${hh}:${mm}`;
-                    } else {
-                        timerEl.textContent = `${eMin}:${eSec}`;
+                // If processing, update progress
+                if (data.progress) {
+                    const p = data.progress;
+                    const label = STEP_LABELS[p.step] || 'Processing...';
+                    els.processingMsg.textContent = label;
+
+                    if (p.pct > 0) {
+                        els.progressBar.style.width = `${p.pct}%`;
+                    }
+
+                    if (timerEl) {
+                        if (p.eta && p.step === 'separating') {
+                            const parts = p.eta.split(':').map(Number);
+                            const etaSec = (parts[0] || 0) * 60 + (parts[1] || 0);
+                            const finishTime = new Date(Date.now() + etaSec * 1000);
+                            const hh = finishTime.getHours().toString().padStart(2, '0');
+                            const mm = finishTime.getMinutes().toString().padStart(2, '0');
+                            timerEl.textContent = `${eMin}:${eSec} · Dự kiến xong lúc ${hh}:${mm}`;
+                        } else {
+                            timerEl.textContent = `${eMin}:${eSec}`;
+                        }
                     }
                 }
-            } catch {
-                // Server busy or not reachable — just show elapsed
-                if (timerEl) timerEl.textContent = `${eMin}:${eSec}`;
+            } catch (err) {
+                console.error("Polling error:", err);
+                if (err.message && err.message !== "Failed to fetch") {
+                    clearInterval(state.progressInterval);
+                    showToast(err.message, 'error');
+                    resetUI();
+                    state.isProcessing = false;
+                } else {
+                    if (timerEl) timerEl.textContent = `${eMin}:${eSec}`;
+                }
             }
         }, 1000);
     }
