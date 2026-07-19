@@ -239,8 +239,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function processFile(file) {
-        // Not implemented on server yet for this quick demo, using a toast to inform.
-        showToast('Direct file upload is under construction. Please use YouTube links!', 'warning');
+        if (state.isProcessing) return;
+        state.isProcessing = true;
+        
+        showProcessingPanel(`Uploading and converting ${file.name}...`);
+        simulateProgress(120); // Upto ~2 mins for direct files
+
+        try {
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error("Failed to read file"));
+                reader.readAsDataURL(file);
+            });
+
+            const response = await fetch(state.apiEndpoint, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '1'
+                },
+                body: JSON.stringify({ 
+                    file_data: base64Data,
+                    filename: file.name
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(()=>({}));
+                throw new Error(err.error || `Server error: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            showResult(blob, `Cover of ${file.name}`);
+            showToast('Conversion complete!', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast(e.message, 'error');
+            resetUI();
+        } finally {
+            state.isProcessing = false;
+            clearInterval(state.progressInterval);
+        }
     }
 
     function showProcessingPanel(msg) {
@@ -268,10 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let progressSim = 0;
     let startTime = 0;
-    function simulateProgress() {
+    function simulateProgress(estimatedSecs = 180) {
         progressSim = 0;
         startTime = Date.now();
         const timerEl = document.getElementById('processingTimer');
+        
+        const estMins = Math.floor(estimatedSecs / 60).toString().padStart(2, '0');
+        const estSecs = (estimatedSecs % 60).toString().padStart(2, '0');
+        const estText = `${estMins}:${estSecs}`;
         
         state.progressInterval = setInterval(() => {
             progressSim += (100 - progressSim) * 0.05;
@@ -285,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
                 const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
                 const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
-                timerEl.textContent = `${mins}:${secs}`;
+                timerEl.textContent = `${mins}:${secs} / ~${estText}`;
             }
         }, 1000);
     }
