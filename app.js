@@ -37,9 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         isProcessing: false,
         isPlaying: false,
+        get serverUrl() {
+            return (localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869').replace(/\/$/, '');
+        },
         get apiEndpoint() {
-            const saved = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
-            return saved.replace(/\/$/, '') + '/cover';
+            return this.serverUrl + '/cover';
         }
     };
 
