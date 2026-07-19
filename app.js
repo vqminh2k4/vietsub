@@ -112,17 +112,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Copy Share Link
-    document.getElementById('btnCopyShareLink').addEventListener('click', () => {
-        const serverUrl = serverUrlInput.value.trim() || localStorage.getItem('kurumiServerUrl') || '';
-        if (!serverUrl || serverUrl.includes('127.0.0.1')) {
-            showToast('Hãy nhập URL tunnel (Cloudflare/ngrok) trước!', 'warning');
-            return;
-        }
-        const shareLink = `${window.location.origin}${window.location.pathname}?server=${encodeURIComponent(serverUrl)}`;
-        navigator.clipboard.writeText(shareLink).then(() => {
-            showToast('✓ Đã copy link chia sẻ! Gửi cho bạn bè.', 'success');
+    const btnCopy = document.getElementById('btnCopyShareLink');
+    if (btnCopy) {
+        btnCopy.addEventListener('click', () => {
+            const serverUrl = serverUrlInput.value.trim() || localStorage.getItem('kurumiServerUrl') || '';
+            if (!serverUrl || serverUrl.includes('127.0.0.1')) {
+                showToast('Hãy nhập URL tunnel (Cloudflare/ngrok) trước!', 'warning');
+                return;
+            }
+            const shareLink = `${window.location.origin}${window.location.pathname}?server=${encodeURIComponent(serverUrl)}`;
+            navigator.clipboard.writeText(shareLink).then(() => {
+                showToast('✓ Đã copy link chia sẻ! Gửi cho bạn bè.', 'success');
+            });
         });
-    });
+    }
 
     // Check server status on load
     updateServerStatus();
@@ -134,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tick = document.createElement('div');
         tick.className = 'clock-tick';
         tick.style.transform = `translateX(-50%) rotate(${i * 6}deg)`;
-        els.clockTicks.appendChild(tick);
+        if (els.clockTicks) els.clockTicks.appendChild(tick);
     }
 
     // Setup Fake Waveform
@@ -142,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bar = document.createElement('div');
         bar.className = 'wave-bar';
         bar.style.height = `${Math.random() * 40 + 10}%`;
-        els.waveformDisplay.appendChild(bar);
+        if (els.waveformDisplay) els.waveformDisplay.appendChild(bar);
     }
 
     // Particles
