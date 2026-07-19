@@ -158,9 +158,9 @@
         }
         
         /* CHIBI SETUP (Using Screen Blend to hide black bg) */
-        .chibi-wrapper { position: absolute; top: -45px; right: -5px; z-index: 10; pointer-events: none; }
+        .chibi-wrapper { position: absolute; bottom: calc(100% - 15px); right: 0px; z-index: 10; pointer-events: none; }
         .chibi-img { 
-            height: 95px; 
+            height: 110px; 
             filter: drop-shadow(0 0 10px rgba(255,0,0,0.5)) contrast(1.1); 
         }
         
@@ -171,7 +171,7 @@
             font-weight: 600; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 6px;
         }
 
-        .url-row { display: flex; gap: 8px; }
+        .url-row { display: flex; gap: 8px; position: relative; }
         .url-field-wrap { position: relative; flex: 1; }
         .url-icon-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--clr-red-bright); }
         .url-field {
@@ -331,9 +331,6 @@
                     <div class="card-corner br"></div>
                     <div class="card-rose-top">☙</div>
                     
-                    <div class="chibi-wrapper">
-                        <img src="img/anh_nho.png" class="chibi-img" alt="Chibi">
-                    </div>
                     
                     <div class="card-content">
                         <!-- URL Input -->
@@ -342,6 +339,9 @@
                             PASTE MUSIC LINK
                         </div>
                         <div class="url-row">
+                            <div class="chibi-wrapper">
+                                <img src="img/anh_nho.png" class="chibi-img" alt="Chibi">
+                            </div>
                             <div class="url-field-wrap">
                                 <div class="url-icon-prefix">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.5 15.6V8.4L16 12l-6.5 3.6z"/></svg>
