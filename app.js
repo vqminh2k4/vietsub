@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isProcessing: false,
         isPlaying: false,
         serverUrl: 'https://subway-percent-senior.ngrok-free.dev',
+        selectedVoice: 'kurumi',
         get apiEndpoint() {
             return this.serverUrl + '/cover';
         }
@@ -68,6 +69,56 @@ document.addEventListener('DOMContentLoaded', () => {
     initParticles();
 
     // Event Listeners
+    
+    // Voice Selection
+    const voiceOptions = document.querySelectorAll('.voice-option');
+    voiceOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            // Update UI
+            voiceOptions.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            
+            // Update State
+            state.selectedVoice = opt.dataset.voice;
+            
+            // Swap Theme
+            const root = document.documentElement;
+            if (state.selectedVoice === 'elaina') {
+                document.body.style.backgroundImage = "url('elaina/anh_nen.png')";
+                document.querySelector('.chibi-kurumi').src = "elaina/anh_nho - Copy.png";
+                
+                // Elaina Theme (Purple/White)
+                root.style.setProperty('--clr-red', '#7e22ce'); 
+                root.style.setProperty('--clr-red-bright', '#a855f7');
+                root.style.setProperty('--clr-red-dark', '#4c1d95');
+                root.style.setProperty('--clr-border', 'rgba(126, 34, 206, 0.5)');
+                root.style.setProperty('--clr-border-glow', 'rgba(168, 85, 247, 0.8)');
+                
+                document.querySelector('.hero-eyebrow').innerHTML = `ELAINA • WANDERING WITCH <svg viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>`;
+                document.querySelector('.hero-title').innerHTML = `Turn Any Song Into<br><span class="highlight">An Elaina Cover</span>`;
+                document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Elaina's enchanting voice.`;
+                document.querySelector('.processing-title').textContent = `Elaina is singing...`;
+                document.querySelector('.result-info h3').textContent = `Elaina (Wandering Witch)`;
+            } else {
+                document.body.style.backgroundImage = "url('img/anh_nen.png')";
+                document.querySelector('.chibi-kurumi').src = "img/anh_nho.png";
+                
+                // Kurumi Theme (Red/Black)
+                root.style.setProperty('--clr-red', '#d31027'); 
+                root.style.setProperty('--clr-red-bright', '#ff2a3a');
+                root.style.setProperty('--clr-red-dark', '#8b0000');
+                root.style.setProperty('--clr-border', 'rgba(220, 20, 40, 0.5)');
+                root.style.setProperty('--clr-border-glow', 'rgba(255, 30, 50, 0.8)');
+                
+                document.querySelector('.hero-eyebrow').innerHTML = `TOKISAKI KURUMI • DATE A LIVE <svg viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>`;
+                document.querySelector('.hero-title').innerHTML = `Turn Any Song Into<br><span class="highlight">A Kurumi Cover</span>`;
+                document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Kurumi Tokisaki's enchanting voice.`;
+                document.querySelector('.processing-title').textContent = `Kurumi is singing...`;
+                document.querySelector('.result-info h3').textContent = `Kurumi Tokisaki`;
+            }
+        });
+    });
+
     els.btnGenerate.addEventListener('click', () => {
         const url = els.urlInput.value.trim();
         if (!url) {
@@ -137,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'ngrok-skip-browser-warning': '1'
                 },
-                body: JSON.stringify({ url })
+                body: JSON.stringify({ url, voice: state.selectedVoice })
             });
 
             if (!response.ok) {
@@ -181,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ 
                     file_data: base64Data,
-                    filename: file.name
+                    filename: file.name,
+                    voice: state.selectedVoice
                 })
             });
 
