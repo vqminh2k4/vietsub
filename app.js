@@ -307,30 +307,59 @@ document.addEventListener('DOMContentLoaded', () => {
         els.inputCard.style.display = 'block';
     }
 
-    let progressSim = 0;
     let startTime = 0;
-    function simulateProgress(estimatedSecs = 180) {
-        progressSim = 0;
+    const STEP_LABELS = {
+        'idle':        'Waiting...',
+        'uploading':   '📤 Uploading file...',
+        'downloading': '⬇️ Downloading audio...',
+        'separating':  '🎵 Extracting vocals...',
+        'converting':  '🎙️ Applying Kurumi voice...',
+        'mixing':      '🎚️ Mixing vocals & music...',
+        'encoding':    '🎧 Encoding MP3...',
+    };
+
+    function simulateProgress() {
         startTime = Date.now();
         const timerEl = document.getElementById('processingTimer');
-        
-        const estMins = Math.floor(estimatedSecs / 60).toString().padStart(2, '0');
-        const estSecs = (estimatedSecs % 60).toString().padStart(2, '0');
-        const estText = `${estMins}:${estSecs}`;
-        
-        state.progressInterval = setInterval(() => {
-            progressSim += (100 - progressSim) * 0.05;
-            els.progressBar.style.width = `${progressSim}%`;
-            
-            if (progressSim > 20 && progressSim < 50) els.processingMsg.textContent = 'Extracting vocals...';
-            if (progressSim > 50 && progressSim < 80) els.processingMsg.textContent = 'Applying Kurumi voice model...';
-            if (progressSim > 80) els.processingMsg.textContent = 'Finalizing audio...';
-            
-            if (timerEl) {
-                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-                const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
-                const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
-                timerEl.textContent = `${mins}:${secs} / ~${estText}`;
+
+        // Reset bar
+        els.progressBar.style.width = '5%';
+        els.processingMsg.textContent = 'Sending request...';
+        if (timerEl) timerEl.textContent = '00:00';
+
+        state.progressInterval = setInterval(async () => {
+            // Elapsed clock (always updates)
+            const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+            const eMin = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
+            const eSec = (elapsedSec % 60).toString().padStart(2, '0');
+
+            try {
+                const r = await fetch(state.serverUrl + '/progress', {
+                    headers: { 'ngrok-skip-browser-warning': '1' }
+                });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+
+                // Update step label
+                const label = STEP_LABELS[data.step] || 'Processing...';
+                els.processingMsg.textContent = label;
+
+                // Update progress bar
+                if (data.pct > 0) {
+                    els.progressBar.style.width = `${data.pct}%`;
+                }
+
+                // Show elapsed + ETA from server
+                if (timerEl) {
+                    if (data.eta && data.step === 'separating') {
+                        timerEl.textContent = `${eMin}:${eSec} · còn ~${data.eta}`;
+                    } else {
+                        timerEl.textContent = `${eMin}:${eSec}`;
+                    }
+                }
+            } catch {
+                // Server busy or not reachable — just show elapsed
+                if (timerEl) timerEl.textContent = `${eMin}:${eSec}`;
             }
         }, 1000);
     }
