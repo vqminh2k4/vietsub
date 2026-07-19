@@ -298,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const audioUrl = URL.createObjectURL(blob);
         els.audioPlayer.src = audioUrl;
         els.btnDownload.href = audioUrl;
+        els.btnDownload.download = 'kurumi_cover.mp3';
         els.resultSourceLabel.textContent = sourceText;
     }
 
