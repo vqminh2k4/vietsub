@@ -3,466 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Kurumi Music Cover — Transform any song into a Kurumi Tokisaki AI vocal cover. Paste a YouTube link or upload audio and hear your favorite songs in Kurumi's voice.">
-    <meta name="keywords" content="Kurumi Tokisaki, AI cover, music cover, Date A Live, anime voice, RVC, vocal cover">
-    <title>Kurumi Music Cover — 時崎狂三 AI Voice</title>
-
+    <title>Kurumi AI Cover</title>
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
 
     <style>
-
         /* CSS CUSTOM PROPERTIES */
         :root {
             --clr-bg:          #070305;
-            --clr-surface:     #0f0507;
-            --clr-card:        rgba(10, 2, 5, 0.75);
-            --clr-border:      rgba(220, 20, 40, 0.5);
-            --clr-border-glow: rgba(255, 30, 50, 0.8);
-            
+            --clr-card:        rgba(15, 2, 5, 0.85);
             --clr-red:         #d31027;
-            --clr-red-bright:  #ff2a3a;
-            --clr-red-dark:    #8b0000;
-            --clr-red-glow:    rgba(255, 42, 58, 0.5);
-            --clr-gold:        #d4a843;
-            
+            --clr-red-bright:  #ff1a30;
             --clr-text:        #fff5f5;
             --clr-text-muted:  rgba(255, 245, 245, 0.7);
-            --clr-text-dim:    rgba(255, 245, 245, 0.4);
-            
             --font-heading:    'Cinzel', serif;
             --font-body:       'Inter', sans-serif;
-            
-            --radius-md:       12px;
-            --radius-lg:       16px;
-            --radius-full:     9999px;
-            
+            --font-jp:         'Noto Serif JP', serif;
             --transition:      all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* RESET & BASE */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; height: 100%; }
+        html { height: 100%; overflow-x: hidden; }
         
         body {
             font-family: var(--font-body);
             background-color: var(--clr-bg);
             background-image: url('img/anh_nen.png');
             background-size: cover;
-            background-position: center right;
+            background-position: center;
             background-attachment: fixed;
-            background-repeat: no-repeat;
             color: var(--clr-text);
             min-height: 100vh;
-            overflow-x: hidden;
-            line-height: 1.6;
             display: flex;
             flex-direction: column;
         }
 
-        /* Dark overlay gradient to make left text readable */
-        body::before {
-            content: '';
+        /* GLOBAL ORNATE BORDER */
+        .global-border {
             position: fixed;
-            inset: 0;
-            background: linear-gradient(90deg, rgba(5,0,0,0.95) 0%, rgba(15,0,0,0.85) 30%, rgba(20,0,0,0.5) 60%, transparent 100%);
+            inset: 12px;
+            border: 1px solid rgba(255, 26, 48, 0.4);
+            border-radius: 8px;
             pointer-events: none;
-            z-index: 0;
+            z-index: 1000;
+            box-shadow: inset 0 0 20px rgba(255,0,0,0.2), 0 0 15px rgba(255,0,0,0.3);
         }
-        
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            border: 1px solid rgba(255, 0, 0, 0.2);
-            box-shadow: inset 0 0 50px rgba(200, 0, 0, 0.2);
-            pointer-events: none;
-            z-index: 10;
+        .global-border::before, .global-border::after {
+            content: ''; position: absolute; width: 20px; height: 20px; border: 2px solid var(--clr-red-bright);
         }
-
-        #particles-canvas {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1;
-        }
+        .global-border::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .global-border::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+        .global-corner-tr { position: absolute; top: -2px; right: -2px; width: 20px; height: 20px; border: 2px solid var(--clr-red-bright); border-left: none; border-bottom: none; }
+        .global-corner-bl { position: absolute; bottom: -2px; left: -2px; width: 20px; height: 20px; border: 2px solid var(--clr-red-bright); border-right: none; border-top: none; }
 
         /* HEADER */
         .header {
             position: relative;
             z-index: 100;
-            padding: 1.5rem 3rem;
+            padding: 2rem 4rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            color: inherit;
-        }
-        .logo-icon {
-            width: 32px; height: 32px;
-            filter: drop-shadow(0 0 8px rgba(255,40,60,0.8));
-        }
-        .logo-name {
-            font-family: var(--font-heading);
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            line-height: 1;
-        }
-        .logo-subtitle {
-            font-size: 0.6rem;
-            color: var(--clr-text-muted);
-            letter-spacing: 0.25em;
-            text-transform: uppercase;
-            margin-top: 2px;
-        }
-        .header-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        .header-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.75rem;
-            color: var(--clr-text-muted);
-            background: rgba(0,0,0,0.6);
-            border: 1px solid rgba(150,150,150,0.3);
-            border-radius: var(--radius-full);
-            padding: 6px 16px;
-            backdrop-filter: blur(4px);
-        }
-        .header-badge .dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 8px #22c55e;
-        }
-        
-        .btn-header {
-            background: rgba(0,0,0,0.6);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: var(--radius-full);
-            padding: 6px 16px;
-            color: white;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            backdrop-filter: blur(4px);
-            transition: var(--transition);
-        }
-        .btn-header:hover {
-            border-color: var(--clr-text);
-            background: rgba(255,255,255,0.1);
-        }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo-icon { width: 36px; height: 36px; filter: drop-shadow(0 0 8px rgba(255,26,48,0.8)); }
+        .logo-name { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1; text-transform: uppercase; }
+        .logo-subtitle { font-size: 0.65rem; color: var(--clr-text-muted); letter-spacing: 0.25em; text-transform: uppercase; margin-top: 4px; }
+        .header-controls { display: flex; gap: 1rem; align-items: center; }
+        .header-badge { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--clr-text-muted); background: rgba(0,0,0,0.7); border: 1px solid rgba(150,150,150,0.3); border-radius: 20px; padding: 6px 16px; backdrop-filter: blur(4px); }
+        .header-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+        .btn-header { background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 16px; color: white; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(4px); transition: var(--transition); }
+        .btn-header:hover { border-color: var(--clr-red-bright); color: var(--clr-red-bright); }
 
         /* MAIN LAYOUT */
-        main {
-            position: relative;
-            z-index: 2;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            padding: 0 4rem;
-        }
-
-        .layout-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            gap: 2rem;
-        }
-
+        main { position: relative; z-index: 2; flex: 1; display: flex; align-items: center; padding: 0 4rem; }
+        .layout-grid { display: grid; grid-template-columns: 1.2fr 1fr; width: 100%; max-width: 1400px; margin: 0 auto; gap: 2rem; position: relative; }
+        
         .left-col {
-            max-width: 600px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            align-items: center;
+            text-align: center;
+            max-width: 650px;
+            margin: 0 auto;
         }
+
+        /* VERTICAL JAPANESE TEXT */
+        .vertical-text {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-family: var(--font-jp);
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 0.3em;
+            text-shadow: 0 0 10px rgba(255, 26, 48, 0.8), 0 0 20px rgba(255, 26, 48, 0.4);
+            z-index: 10;
+        }
+        
+        /* BUTTERFLIES */
+        .butterfly {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            fill: var(--clr-red-bright);
+            filter: drop-shadow(0 0 8px var(--clr-red-bright));
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .bf-1 { top: -20px; left: 15%; transform: rotate(-20deg) scale(0.8); }
+        .bf-2 { top: 60px; right: 5%; transform: rotate(15deg) scale(1.2); }
+        .bf-3 { bottom: 40px; left: -10%; transform: rotate(45deg); }
+        .bf-4 { top: 40%; right: -15%; transform: rotate(-10deg) scale(0.9); }
 
         /* HERO TEXT */
         .hero-eyebrow {
-            font-size: 0.75rem;
-            letter-spacing: 0.35em;
-            text-transform: uppercase;
-            color: var(--clr-text-muted);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--clr-text-muted);
+            margin-bottom: 1rem; display: flex; align-items: center; gap: 16px; justify-content: center; position: relative;
         }
-        .hero-eyebrow svg { width: 14px; height: 14px; fill: var(--clr-red-bright); }
+        .hero-eyebrow::before, .hero-eyebrow::after {
+            content: ''; display: block; width: 40px; height: 1px; background: rgba(255,26,48,0.5);
+        }
         
         .hero-title {
-            font-family: var(--font-heading);
-            font-size: clamp(3rem, 5vw, 4.2rem);
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 0 20px rgba(0,0,0,0.8), 2px 2px 4px rgba(0,0,0,0.9);
+            font-family: var(--font-heading); font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 700; line-height: 1.1;
+            margin-bottom: 1.5rem; text-shadow: 0 4px 20px rgba(0,0,0,0.8);
         }
         .hero-title .highlight {
-            color: var(--clr-red-bright);
-            text-shadow: 0 0 15px rgba(255,42,58,0.5), 0 0 30px rgba(255,42,58,0.3);
+            color: var(--clr-red-bright); display: block;
+            text-shadow: 0 0 20px rgba(255,26,48,0.6), 0 0 40px rgba(255,26,48,0.3);
         }
         
         .hero-desc {
-            font-size: 1rem;
-            color: var(--clr-text-muted);
-            max-width: 480px;
-            line-height: 1.6;
-            margin-bottom: 3rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            font-size: 1.05rem; color: var(--clr-text-muted); max-width: 480px; line-height: 1.6;
+            margin-bottom: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
-        /* CARD BORDER STYLES */
+        /* ORNATE SEPARATOR */
+        .ornate-separator {
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 2rem; width: 100%; max-width: 400px;
+        }
+        .ornate-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,26,48,0.8), transparent); }
+        .ornate-rose { color: var(--clr-red-bright); font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,26,48,0.8)); }
+
+        /* INPUT CARD */
         .card {
-            background: var(--clr-card);
-            border-radius: var(--radius-lg);
-            position: relative;
-            backdrop-filter: blur(8px);
-            margin-bottom: 1.5rem;
+            background: var(--clr-card); border-radius: 12px; position: relative;
+            backdrop-filter: blur(12px); width: 100%; max-width: 550px;
+            border: 1px solid rgba(255, 26, 48, 0.4);
+            box-shadow: 0 0 30px rgba(255, 26, 48, 0.15), inset 0 0 20px rgba(255, 26, 48, 0.05);
+            margin-bottom: 2rem;
         }
         
-        /* The glowing double border effect */
-        .card-border {
-            position: absolute;
-            inset: 0;
-            border: 2px solid rgba(255, 42, 58, 0.4);
-            border-radius: inherit;
-            pointer-events: none;
-            box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.1), 0 0 15px rgba(255, 0, 0, 0.2);
-            z-index: 1;
+        .card-corner {
+            position: absolute; width: 16px; height: 16px; border: 2px solid var(--clr-red-bright); border-radius: 2px;
         }
-        .card-border::before {
-            content: '';
-            position: absolute;
-            inset: 4px;
-            border: 1px solid rgba(255, 42, 58, 0.15);
-            border-radius: calc(var(--radius-lg) - 4px);
-        }
-        
-        /* Ornate corners */
-        .corner {
-            position: absolute;
-            width: 8px; height: 8px;
-            background: var(--clr-red-bright);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--clr-red-bright);
-            z-index: 2;
-        }
-        .corner.tl { top: -4px; left: -4px; }
-        .corner.tr { top: -4px; right: -4px; }
-        .corner.bl { bottom: -4px; left: -4px; }
-        .corner.br { bottom: -4px; right: -4px; }
-        
-        /* Chibi image */
-        .chibi-kurumi {
-            position: absolute;
-            top: -55px;
-            right: 30px;
-            height: 100px;
-            z-index: 10;
-            pointer-events: none;
-            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
-        }
-        
-        /* Decorative top center rose */
-        .card-rose {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 24px; height: 24px;
-            background: var(--clr-bg);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 3;
-            color: var(--clr-red-bright);
-            font-size: 14px;
-        }
+        .card-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .card-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .card-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .card-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
 
-        /* INPUT PANEL CONTENT */
-        .card-content {
-            padding: 2.2rem 2.5rem;
-            position: relative;
-            z-index: 5;
+        .card-rose-top {
+            position: absolute; top: -14px; left: 16px; background: var(--clr-bg);
+            padding: 0 4px; color: var(--clr-red-bright); font-size: 1.2rem; line-height: 1;
         }
+        
+        .chibi-wrapper { position: absolute; top: -75px; right: -10px; z-index: 10; pointer-events: none; }
+        .chibi-img { height: 120px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6)); }
+        .chibi-heart { position: absolute; color: var(--clr-red-bright); font-size: 1.2rem; top: 10px; left: -15px; filter: drop-shadow(0 0 5px red); animation: float 3s infinite ease-in-out; }
+        .chibi-heart2 { position: absolute; color: var(--clr-red-bright); font-size: 0.8rem; top: 30px; left: -30px; filter: drop-shadow(0 0 5px red); animation: float 2.5s infinite ease-in-out 1s; }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        .card-content { padding: 2rem; position: relative; z-index: 5; text-align: left; }
 
         .input-label {
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--clr-text-muted);
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--clr-red-bright);
+            font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
         }
-        .input-label svg { stroke: var(--clr-red-bright); }
 
-        .url-row {
-            display: flex;
-            gap: 12px;
-        }
-        .url-field-wrap {
-            position: relative;
-            flex: 1;
-        }
-        .url-icon-prefix {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            color: var(--clr-red-bright);
-        }
+        .url-row { display: flex; gap: 12px; }
+        .url-field-wrap { position: relative; flex: 1; }
+        .url-icon-prefix { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--clr-red-bright); }
         .url-field {
-            width: 100%;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 0 1rem 0 3rem;
-            height: 52px;
-            font-family: var(--font-body);
-            font-size: 0.9rem;
-            color: var(--clr-text);
-            outline: none;
-            transition: var(--transition);
+            width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            padding: 0 1rem 0 3rem; height: 48px; font-family: var(--font-body); font-size: 0.9rem; color: var(--clr-text); outline: none; transition: var(--transition);
         }
-        .url-field:focus {
-            border-color: var(--clr-red-bright);
-            background: rgba(0,0,0,0.8);
-            box-shadow: inset 0 0 10px rgba(255,0,0,0.1);
-        }
+        .url-field:focus { border-color: var(--clr-red-bright); box-shadow: 0 0 10px rgba(255,26,48,0.2); }
 
         .btn-cover {
-            height: 52px;
-            padding: 0 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-family: var(--font-body);
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-            white-space: nowrap;
-            background: linear-gradient(90deg, #d31027, #ea384d);
-            color: white;
-            box-shadow: 0 4px 15px rgba(211, 16, 39, 0.4);
+            height: 48px; padding: 0 1.5rem; border: none; border-radius: 8px; font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); white-space: nowrap;
+            background: var(--clr-red-bright); color: white; box-shadow: 0 0 15px rgba(255,26,48,0.4);
         }
-        .btn-cover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(211, 16, 39, 0.6);
-            filter: brightness(1.1);
-        }
+        .btn-cover:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(255,26,48,0.6); }
 
-        .separator {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-        .separator-line {
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,42,58,0.5), transparent);
-        }
-        .separator-text {
-            font-size: 0.7rem;
-            letter-spacing: 0.2em;
-            color: var(--clr-text-muted);
-            text-transform: uppercase;
-        }
+        .separator { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; }
+        .separator-line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+        .separator-diamond { width: 6px; height: 6px; background: var(--clr-red-bright); transform: rotate(45deg); }
+        .separator-text { font-size: 0.75rem; letter-spacing: 0.15em; color: var(--clr-text-muted); text-transform: uppercase; }
 
         .drop-zone {
-            border: 1px dashed rgba(255,42,58,0.4);
-            background: rgba(0,0,0,0.4);
-            border-radius: 8px;
-            padding: 2.5rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition);
+            border: 1.5px dashed rgba(255,26,48,0.5); background: rgba(255,26,48,0.03); border-radius: 8px;
+            padding: 2.5rem 2rem; text-align: center; cursor: pointer; transition: var(--transition); position: relative;
         }
-        .drop-zone:hover {
-            border-color: var(--clr-red-bright);
-            background: rgba(255,42,58,0.05);
-        }
-        .drop-zone-icon {
-            color: var(--clr-red-bright);
-            margin-bottom: 0.75rem;
-        }
-        .drop-zone p { font-size: 0.9rem; color: var(--clr-text-muted); margin-bottom: 0.25rem; }
-        .drop-zone .highlight { color: var(--clr-red-bright); font-weight: 500; }
-        .drop-zone-sub { font-size: 0.75rem; color: rgba(255,255,255,0.3); }
-
+        .drop-zone:hover { border-color: var(--clr-red-bright); background: rgba(255,26,48,0.08); }
+        .drop-zone-icon { color: var(--clr-red-bright); font-size: 2rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(255,26,48,0.8)); }
+        .drop-zone p { font-size: 0.95rem; color: var(--clr-text); margin-bottom: 0.25rem; }
+        .drop-zone .highlight { color: var(--clr-red-bright); }
+        .drop-zone-sub { font-size: 0.75rem; color: var(--clr-text-muted); }
         #fileInput { display: none; }
+        
+        .dz-bf1 { position: absolute; top: 10px; left: 20px; width: 14px; height: 14px; fill: var(--clr-red-bright); opacity: 0.6; transform: rotate(-30deg); }
+        .dz-bf2 { position: absolute; bottom: 10px; right: 20px; width: 18px; height: 18px; fill: var(--clr-red-bright); opacity: 0.8; transform: rotate(20deg); }
 
         /* FOOTER / FEATURES */
+        .features-wrapper {
+            position: relative; z-index: 100; margin: 2rem 4rem; padding: 1px;
+            background: linear-gradient(90deg, rgba(255,26,48,0.1), rgba(255,26,48,0.6), rgba(255,26,48,0.1));
+            border-radius: 16px;
+        }
         .features-bar {
-            position: relative;
-            z-index: 100;
-            padding: 1.5rem 4rem;
-            background: linear-gradient(0deg, rgba(5,0,5,0.9) 0%, rgba(10,2,5,0.7) 100%);
-            border-top: 1px solid rgba(255,42,58,0.2);
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            background: #070305; border-radius: 15px; padding: 1.5rem 3rem;
+            box-shadow: inset 0 0 20px rgba(255,26,48,0.15);
         }
         .features-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; max-width: 1400px; margin: 0 auto;
         }
-        .feature-item {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-start;
-        }
+        .feature-item { display: flex; gap: 1rem; align-items: center; }
         .feature-icon {
-            color: var(--clr-red-bright);
-            flex-shrink: 0;
-            filter: drop-shadow(0 0 5px rgba(255,42,58,0.5));
+            width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,26,48,0.4); border-radius: 50%; color: var(--clr-red-bright);
+            box-shadow: 0 0 15px rgba(255,26,48,0.2);
         }
-        .feature-content h4 {
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--clr-text);
-            margin-bottom: 0.3rem;
-        }
-        .feature-content p {
-            font-size: 0.75rem;
-            color: var(--clr-text-muted);
-            line-height: 1.4;
-        }
+        .feature-content h4 { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--clr-text); margin-bottom: 0.2rem; }
+        .feature-content p { font-size: 0.75rem; color: var(--clr-text-muted); line-height: 1.3; }
 
         /* MODALS & PANELS */
-        #processingPanel, #resultPanel {
-            display: none;
-            text-align: center;
-        }
+        #processingPanel, #resultPanel { display: none; text-align: center; }
         #processingPanel.active, #resultPanel.active { display: block; }
-
+        
         .clock-spinner { width: 80px; height: 80px; margin: 0 auto 1.5rem; position: relative; }
         .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--clr-red-bright); border-right-color: var(--clr-red); animation: spin 1.4s infinite; }
         .spinner-ring-2 { position: absolute; inset: 6px; border-radius: 50%; border: 1.5px solid transparent; border-bottom-color: var(--clr-gold); opacity: 0.7; animation: spin 2.1s infinite reverse; }
@@ -470,8 +255,8 @@
         
         .processing-title { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.1em; }
         .processing-sub { font-size: 0.9rem; color: var(--clr-text-muted); }
-        .progress-track { margin-top: 1.5rem; height: 3px; background: rgba(255,255,255,0.1); border-radius: var(--radius-full); }
-        .progress-fill-bar { height: 100%; background: var(--clr-red-bright); border-radius: var(--radius-full); width: 0%; box-shadow: 0 0 10px var(--clr-red-bright); transition: width 0.4s ease; }
+        .progress-track { margin-top: 1.5rem; height: 3px; background: rgba(255,255,255,0.1); border-radius: 999px; }
+        .progress-fill-bar { height: 100%; background: var(--clr-red-bright); border-radius: 999px; width: 0%; box-shadow: 0 0 10px var(--clr-red-bright); transition: width 0.4s ease; }
         .processing-timer { color: var(--clr-text); font-family: var(--font-heading); font-size: 1.2rem; margin-top: 1rem; font-weight: 600; letter-spacing: 2px; }
 
         .result-header { display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem; }
@@ -493,22 +278,16 @@
         .btn-download.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
 
         #audioPlayer { display: none; }
-        
-        /* TOAST */
         #toastContainer { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: rgba(15,5,7,0.9); border: 1px solid var(--clr-border); border-left: 3px solid var(--clr-red-bright); padding: 1rem; border-radius: 8px; color: white; display: flex; gap: 10px; font-size: 0.85rem; backdrop-filter: blur(8px); }
+        .toast { background: rgba(15,5,7,0.9); border: 1px solid rgba(255,26,48,0.4); border-left: 3px solid var(--clr-red-bright); padding: 1rem; border-radius: 8px; color: white; display: flex; gap: 10px; font-size: 0.85rem; backdrop-filter: blur(8px); }
 
-        /* SCROLLBAR */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--clr-bg); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,42,58,0.3); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,42,58,0.5); }
-    
     </style>
 </head>
-
 <body>
-    <canvas id="particles-canvas"></canvas>
+    <div class="global-border">
+        <div class="global-corner-tr"></div>
+        <div class="global-corner-bl"></div>
+    </div>
 
     <!-- HEADER -->
     <header class="header">
@@ -545,25 +324,38 @@
     <main>
         <div class="layout-grid">
             <div class="left-col">
+                <!-- SVG Butterflies -->
+                <svg class="butterfly bf-1" viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
+                <svg class="butterfly bf-2" viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
+                <svg class="butterfly bf-3" viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
+
                 <!-- TEXT -->
                 <div class="hero-eyebrow">
                     TOKISAKI KURUMI • DATE A LIVE
-                    <svg viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
                 </div>
                 <h1 class="hero-title">Turn Any Song Into<br><span class="highlight">A Kurumi Cover</span></h1>
+                
+                <div class="ornate-separator">
+                    <div class="ornate-line"></div>
+                    <div class="ornate-rose">✿</div>
+                    <div class="ornate-line"></div>
+                </div>
+
                 <p class="hero-desc">Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Kurumi Tokisaki's enchanting voice.</p>
 
-                <!-- INTERACTION PANELS (INPUT / PROCESSING / RESULT) -->
-                
-                <!-- INPUT CARD -->
+                <!-- INTERACTION PANELS -->
                 <div class="card" id="inputCard">
-                    <img src="img/anh_nho.png" class="chibi-kurumi" alt="Chibi Kurumi">
-                    <div class="card-border">
-                        <div class="corner tl"></div>
-                        <div class="corner tr"></div>
-                        <div class="corner bl"></div>
-                        <div class="corner br"></div>
-                        <div class="card-rose">✿</div>
+                    <!-- Borders & Decorations -->
+                    <div class="card-corner tl"></div>
+                    <div class="card-corner tr"></div>
+                    <div class="card-corner bl"></div>
+                    <div class="card-corner br"></div>
+                    <div class="card-rose-top">☙</div>
+                    
+                    <div class="chibi-wrapper">
+                        <span class="chibi-heart">♡</span>
+                        <span class="chibi-heart2">♡</span>
+                        <img src="img/anh_nho.png" class="chibi-img" alt="Chibi">
                     </div>
                     
                     <div class="card-content">
@@ -588,15 +380,17 @@
                         <!-- Separator -->
                         <div class="separator">
                             <div class="separator-line"></div>
+                            <div class="separator-diamond"></div>
                             <span class="separator-text">OR UPLOAD AUDIO</span>
+                            <div class="separator-diamond"></div>
                             <div class="separator-line"></div>
                         </div>
 
                         <!-- File Drop Zone -->
                         <div class="drop-zone" id="dropZone">
-                            <div class="drop-zone-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                            </div>
+                            <svg class="dz-bf1" viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
+                            <svg class="dz-bf2" viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
+                            <div class="drop-zone-icon">♫</div>
                             <p>Drop your audio file here or <span class="highlight">click to browse</span></p>
                             <p class="drop-zone-sub">Supports MP3, WAV, OGG, FLAC, M4A</p>
                             <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a">
@@ -606,10 +400,8 @@
 
                 <!-- PROCESSING CARD -->
                 <div class="card" id="processingPanel">
-                    <div class="card-border">
-                        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
-                    </div>
-                    <div class="card-content">
+                    <div class="card-corner tl"></div><div class="card-corner tr"></div><div class="card-corner bl"></div><div class="card-corner br"></div>
+                    <div class="card-content" style="text-align:center;">
                         <div class="clock-spinner">
                             <div class="spinner-ring"></div>
                             <div class="spinner-ring-2"></div>
@@ -625,9 +417,7 @@
 
                 <!-- RESULT CARD -->
                 <div class="card" id="resultPanel">
-                    <div class="card-border">
-                        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
-                    </div>
+                    <div class="card-corner tl"></div><div class="card-corner tr"></div><div class="card-corner bl"></div><div class="card-corner br"></div>
                     <div class="card-content">
                         <div class="result-header">
                             <div class="result-avatar"></div>
@@ -649,7 +439,6 @@
                                 <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
                             </div>
                         </div>
-
                         <audio id="audioPlayer"></audio>
 
                         <div class="result-actions">
@@ -667,65 +456,66 @@
             </div>
             
             <div class="right-col">
-                <!-- Empty space for the background character to shine -->
+                <div class="vertical-text">さあ、わたくしと<br>素敵な音楽の時間を</div>
             </div>
         </div>
     </main>
 
     <!-- FOOTER / FEATURES -->
-    <div class="features-bar">
-        <div class="features-grid">
-            <div class="feature-item">
-                <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>
-                <div class="feature-content">
-                    <h4>AI POWERED</h4>
-                    <p>Advanced AI voice conversion trained on Kurumi's voice</p>
+    <div class="features-wrapper">
+        <div class="features-bar">
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>
+                    <div class="feature-content">
+                        <h4>AI POWERED</h4>
+                        <p>Advanced AI voice conversion trained on Kurumi's voice</p>
+                    </div>
                 </div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
-                <div class="feature-content">
-                    <h4>HIGH QUALITY</h4>
-                    <p>Crystal clear results with natural tone & emotion</p>
+                <div class="feature-item">
+                    <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
+                    <div class="feature-content">
+                        <h4>HIGH QUALITY</h4>
+                        <p>Crystal clear results with natural tone & emotion</p>
+                    </div>
                 </div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
-                <div class="feature-content">
-                    <h4>EASY TO USE</h4>
-                    <p>Just paste or upload and let the magic happen</p>
+                <div class="feature-item">
+                    <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div>
+                    <div class="feature-content">
+                        <h4>EASY TO USE</h4>
+                        <p>Just paste or upload and let the magic happen</p>
+                    </div>
                 </div>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
-                <div class="feature-content">
-                    <h4>SECURE & PRIVATE</h4>
-                    <p>Your data is safe and will never be stored</p>
+                <div class="feature-item">
+                    <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+                    <div class="feature-content">
+                        <h4>SECURE & PRIVATE</h4>
+                        <p>Your data is safe and will never be stored</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
+    <!-- TOAST & MODAL -->
     <div id="toastContainer"></div>
 
-    <!-- SETTINGS MODAL -->
     <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:9000;align-items:center;justify-content:center;">
-        <div style="background:#0f0507;border:1px solid rgba(255,42,58,0.4);border-radius:16px;padding:2rem;width:min(500px,92vw);position:relative;box-shadow:0 0 40px rgba(255,42,58,0.2);">
+        <div style="background:#0f0507;border:1px solid rgba(255,26,48,0.4);border-radius:12px;padding:2rem;width:min(500px,92vw);position:relative;box-shadow:0 0 40px rgba(255,26,48,0.2);">
             <button id="settingsClose" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;">✕</button>
             <h2 style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;margin-bottom:0.3rem;">⚙ Server Settings</h2>
             <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:1.5rem;">Configure Kurumi Server connection.</p>
 
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.2rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.5);border-radius:8px;border:1px solid rgba(255,42,58,0.2);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.2rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.5);border-radius:8px;border:1px solid rgba(255,26,48,0.2);">
                 <div id="serverStatusDot" style="width:8px;height:8px;border-radius:50%;background:#888;"></div>
                 <span id="serverStatusText" style="font-size:0.85rem;">Checking...</span>
             </div>
 
             <label style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--clr-red-bright);font-weight:600;display:block;margin-bottom:0.5rem;">Server URL</label>
-            <input id="serverUrlInput" type="url" placeholder="http://127.0.0.1:7869" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:0.75rem 1rem;font-family:var(--font-body);font-size:0.9rem;color:white;outline:none;margin-bottom:1.5rem;transition:0.3s;" onfocus="this.style.borderColor='#ff2a3a'">
+            <input id="serverUrlInput" type="url" placeholder="http://127.0.0.1:7869" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:0.75rem 1rem;font-family:var(--font-body);font-size:0.9rem;color:white;outline:none;margin-bottom:1.5rem;transition:0.3s;" onfocus="this.style.borderColor='#ff1a30'">
 
             <div style="display:flex;gap:10px;">
-                <button id="btnSaveSettings" style="flex:1;height:44px;background:linear-gradient(90deg,#d31027,#ea384d);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;">Save & Check</button>
+                <button id="btnSaveSettings" style="flex:1;height:44px;background:var(--clr-red-bright);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;">Save & Check</button>
             </div>
         </div>
     </div>
