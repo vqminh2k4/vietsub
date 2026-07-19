@@ -973,14 +973,11 @@
                     <circle cx="20" cy="20" r="18" stroke="#c8102e" stroke-width="1.5" stroke-dasharray="4 2"/>
                     <circle cx="20" cy="20" r="14" stroke="rgba(200,16,46,0.35)" stroke-width="1"/>
                     <circle cx="20" cy="20" r="2" fill="#e8243a"/>
-                    <!-- Roman numeral tick marks -->
                     <line x1="20" y1="4"  x2="20" y2="7"  stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
                     <line x1="20" y1="33" x2="20" y2="36" stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
                     <line x1="4"  y1="20" x2="7"  y2="20" stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
                     <line x1="33" y1="20" x2="36" y2="20" stroke="#c8102e" stroke-width="2" stroke-linecap="round"/>
-                    <!-- Hour hand -->
                     <line x1="20" y1="20" x2="26" y2="14" stroke="#e8243a" stroke-width="2" stroke-linecap="round"/>
-                    <!-- Minute hand -->
                     <line x1="20" y1="20" x2="20" y2="10" stroke="#d4a843" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
                 <div>
@@ -988,9 +985,18 @@
                     <div class="logo-subtitle">時崎狂三 AI Cover</div>
                 </div>
             </a>
-            <div class="header-badge">
-                <span class="dot"></span>
-                AI Voice Active
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="header-badge">
+                    <span class="dot" id="serverStatusDot"></span>
+                    <span id="serverStatusText">Checking...</span>
+                </div>
+                <button id="settingsBtn" title="Server Settings" style="background:rgba(200,16,46,0.1);border:1.5px solid rgba(200,16,46,0.25);border-radius:8px;padding:6px 10px;cursor:pointer;color:#f0e8e8;display:flex;align-items:center;gap:6px;font-size:0.78rem;transition:all 0.2s;" onmouseover="this.style.background='rgba(200,16,46,0.2)'" onmouseout="this.style.background='rgba(200,16,46,0.1)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Server
+                </button>
             </div>
         </div>
     </header>
@@ -1162,6 +1168,33 @@
 
     <!-- TOAST CONTAINER -->
     <div id="toastContainer"></div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9000;align-items:center;justify-content:center;">
+        <div style="background:#130d15;border:1px solid rgba(200,16,46,0.35);border-radius:20px;padding:2rem;width:min(500px,92vw);position:relative;box-shadow:0 0 60px rgba(200,16,46,0.15);">
+            <button id="settingsClose" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+            <h2 style="font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;margin-bottom:0.3rem;color:#f0e8e8;">⚙ Server Settings</h2>
+            <p style="font-size:0.78rem;color:rgba(240,232,232,0.5);margin-bottom:1.5rem;">Cấu hình địa chỉ Kurumi Server để kết nối.</p>
+
+            <!-- Status -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.2rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.3);border-radius:10px;border:1px solid rgba(200,16,46,0.15);">
+                <div id="serverStatusDot" style="width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;"></div>
+                <span id="serverStatusText" style="font-size:0.82rem;color:#f0e8e8;">Checking...</span>
+            </div>
+
+            <!-- URL Input -->
+            <label style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:#c8102e;font-weight:600;display:block;margin-bottom:0.5rem;">Server URL</label>
+            <input id="serverUrlInput" type="url" placeholder="http://127.0.0.1:7869" style="width:100%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(200,16,46,0.25);border-radius:10px;padding:0.75rem 1rem;font-family:'Inter',sans-serif;font-size:0.9rem;color:#f0e8e8;outline:none;margin-bottom:0.75rem;">
+            <p style="font-size:0.75rem;color:rgba(240,232,232,0.4);margin-bottom:1.5rem;line-height:1.6;">
+                📍 <strong style="color:#f0c96a;">Dùng riêng:</strong> Để mặc định <code style="color:#c8102e;">http://127.0.0.1:7869</code><br>
+                🌐 <strong style="color:#f0c96a;">Chia sẻ với bạn bè:</strong> Chạy <code style="color:#c8102e;">share-server.bat</code> rồi dán URL <code>trytunnel.com/...</code> vào đây.
+            </p>
+
+            <div style="display:flex;gap:10px;">
+                <button id="btnSaveSettings" style="flex:1;height:44px;background:linear-gradient(135deg,#c8102e,#7a0a1a);border:none;border-radius:10px;color:#fff;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Lưu & Kiểm tra</button>
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>

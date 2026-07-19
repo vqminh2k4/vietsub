@@ -37,8 +37,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         isProcessing: false,
         isPlaying: false,
-        apiEndpoint: 'http://127.0.0.1:7869/cover'
+        get apiEndpoint() {
+            const saved = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
+            return saved.replace(/\/$/, '') + '/cover';
+        }
     };
+
+    // ─── Settings Modal ───────────────────────────────────────────────
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsClose = document.getElementById('settingsClose');
+    const serverUrlInput = document.getElementById('serverUrlInput');
+    const btnSaveSettings = document.getElementById('btnSaveSettings');
+    const serverStatusDot = document.getElementById('serverStatusDot');
+    const serverStatusText = document.getElementById('serverStatusText');
+
+    function loadSettings() {
+        serverUrlInput.value = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
+    }
+
+    async function checkServerHealth(url) {
+        try {
+            const res = await fetch(url.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(3000) });
+            return res.ok;
+        } catch { return false; }
+    }
+
+    async function updateServerStatus() {
+        const url = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
+        serverStatusDot.style.background = '#888';
+        serverStatusText.textContent = 'Checking...';
+        const ok = await checkServerHealth(url);
+        if (ok) {
+            serverStatusDot.style.background = '#22c55e';
+            serverStatusDot.style.boxShadow = '0 0 6px #22c55e';
+            serverStatusText.textContent = 'Server Online ✓';
+        } else {
+            serverStatusDot.style.background = '#ef4444';
+            serverStatusDot.style.boxShadow = '0 0 6px #ef4444';
+            serverStatusText.textContent = 'Server Offline';
+        }
+    }
+
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'flex';
+        loadSettings();
+        updateServerStatus();
+    });
+    settingsClose.addEventListener('click', () => settingsModal.style.display = 'none');
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.style.display = 'none'; });
+
+    btnSaveSettings.addEventListener('click', () => {
+        const val = serverUrlInput.value.trim();
+        if (val) {
+            localStorage.setItem('kurumiServerUrl', val);
+            showToast('Đã lưu URL server!', 'success');
+            updateServerStatus();
+        }
+    });
+
+    // Check server status on load
+    updateServerStatus();
+
 
     // Setup Clock Ticks
     for (let i = 0; i < 60; i++) {
