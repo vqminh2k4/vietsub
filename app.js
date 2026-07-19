@@ -37,9 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         isProcessing: false,
         isPlaying: false,
-        serverUrl: 'https://subway-percent-senior.ngrok-free.dev',
+        primaryUrl: 'https://subway-percent-senior.ngrok-free.dev',
+        fallbackUrl: 'https://vqminh2k4-kurumi-voice.hf.space',
+        activeServerUrl: 'https://subway-percent-senior.ngrok-free.dev', // Default to primary
         get apiEndpoint() {
-            return this.serverUrl + '/cover';
+            return this.activeServerUrl + '/cover';
         }
     };
 
@@ -124,83 +126,108 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Core Logic
-    async function processUrl(url) {
-        if (state.isProcessing) return;
-        state.isProcessing = true;
-        
-        showProcessingPanel('Sending request to server...');
-        
+    async function checkServerAndGetUrl() {
+        showToast("Checking server availability...", "info");
         try {
+            // Ping primary server
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            
+            const response = await fetch(state.primaryUrl + '/health', { 
+                headers: { 'ngrok-skip-browser-warning': '1' },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+                state.activeServerUrl = state.primaryUrl;
+                showToast("Connected to Local PC Server ⚡", "success");
+                return;
+            }
+        } catch (e) {
+            console.log("Primary server unreachable, falling back to Hugging Face", e);
+        }
+        
+        // Fallback to HF
+        state.activeServerUrl = state.fallbackUrl;
+        showToast("Local PC is offline. Using Cloud Server ☁️ (Might take longer)", "info");
+    }
+
+    async function processUrl(url) {
+        if (!url) {
+            showToast('Please enter a YouTube link', 'error');
+            return;
+        }
+
+        try {
+            showProcessingPanel('Sending request to server...');
+            await checkServerAndGetUrl();
+            
             const response = await fetch(state.apiEndpoint, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'ngrok-skip-browser-warning': '1'
                 },
-                body: JSON.stringify({ url })
+                body: JSON.stringify({ url: url })
             });
 
             if (!response.ok) {
-                const err = await response.json().catch(()=>({}));
-                throw new Error(err.error || `Server error: ${response.status}`);
+                const text = await response.text();
+                throw new Error(`Server error: ${response.status} ${text}`);
             }
 
             const data = await response.json();
-            if (data.job_id) {
+            if (data.status === 'success' || data.status === 'pending_approval') {
                 pollJob(data.job_id, `Cover from URL`);
             } else {
-                throw new Error("No job_id returned");
+                throw new Error(data.error || "Unknown error occurred");
             }
-        } catch (e) {
-            console.error(e);
-            showToast(e.message, 'error');
+        } catch (error) {
+            console.error('API Error:', error);
+            showToast(error.message, 'error');
             resetUI();
-            state.isProcessing = false;
         }
     }
 
     async function processFile(file) {
-        if (state.isProcessing) return;
-        state.isProcessing = true;
+        if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) {
+            showToast('Please select a valid audio or video file', 'error');
+            return;
+        }
         
-        showProcessingPanel(`Sending ${file.name} to server...`);
-        
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+            showToast('File is too large (max 50MB)', 'error');
+            return;
+        }
+
         try {
-            const base64Data = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(new Error("Failed to read file"));
-                reader.readAsDataURL(file);
-            });
+            showProcessingPanel(`Sending ${file.name} to server...`);
+            await checkServerAndGetUrl();
+            
+            const formData = new FormData();
+            formData.append('audio_file', file);
 
             const response = await fetch(state.apiEndpoint, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': '1'
-                },
-                body: JSON.stringify({ 
-                    file_data: base64Data,
-                    filename: file.name
-                })
+                headers: { 'ngrok-skip-browser-warning': '1' },
+                body: formData
             });
 
             if (!response.ok) {
-                const err = await response.json().catch(()=>({}));
-                throw new Error(err.error || `Server error: ${response.status}`);
+                throw new Error(`Server error: ${response.status}`);
             }
 
             const data = await response.json();
-            if (data.job_id) {
+            if (data.status === 'success' || data.status === 'pending_approval') {
                 pollJob(data.job_id, `Cover of ${file.name}`);
             } else {
-                throw new Error("No job_id returned");
+                throw new Error(data.error || "Unknown error occurred");
             }
-        } catch (e) {
-            console.error(e);
-            showToast(e.message, 'error');
+        } catch (error) {
+            console.error('Upload Error:', error);
+            showToast(error.message, 'error');
             resetUI();
-            state.isProcessing = false;
         }
     }
 
@@ -212,11 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
         els.progressBar.style.width = '0%';
     }
 
-    function showResult(blob, sourceText) {
+    function showResult(blobOrUrl, sourceText) {
         els.processingPanel.classList.remove('active');
         els.resultPanel.classList.add('active');
         
-        const audioUrl = URL.createObjectURL(blob);
+        const audioUrl = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
         els.audioPlayer.src = audioUrl;
         els.btnDownload.href = audioUrl;
         els.btnDownload.download = 'kurumi_cover.mp3';
@@ -239,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'encoding':    '🎧 Encoding MP3...',
     };
 
-    function pollJob(job_id, sourceText) {
+    function pollJob(jobId, sourceText) {
         startTime = Date.now();
         const timerEl = document.getElementById('processingTimer');
 
@@ -255,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const eSec = (elapsedSec % 60).toString().padStart(2, '0');
 
             try {
-                const r = await fetch(state.serverUrl + '/job/' + job_id, {
+                const r = await fetch(`${state.activeServerUrl}/status?job_id=${jobId}`, {
                     headers: { 'ngrok-skip-browser-warning': '1' }
                 });
                 if (!r.ok) throw new Error();
