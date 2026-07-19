@@ -56,6 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
         serverUrlInput.value = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
     }
 
+    // ── Tự động đọc ?server= từ URL (khi bạn bè mở share link) ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverParam = urlParams.get('server');
+    if (serverParam) {
+        localStorage.setItem('kurumiServerUrl', serverParam);
+        // Xoa param khoi URL cho gon (khong reload)
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+    }
+
     async function checkServerHealth(url) {
         try {
             const res = await fetch(url.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(3000) });
@@ -66,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateServerStatus() {
         const url = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
         serverStatusDot.style.background = '#888';
-        serverStatusText.textContent = 'Checking...';
+        serverStatusText.textContent = 'Đang kiểm tra...';
         const ok = await checkServerHealth(url);
         if (ok) {
             serverStatusDot.style.background = '#22c55e';
@@ -94,6 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Đã lưu URL server!', 'success');
             updateServerStatus();
         }
+    });
+
+    // Copy Share Link
+    document.getElementById('btnCopyShareLink').addEventListener('click', () => {
+        const serverUrl = serverUrlInput.value.trim() || localStorage.getItem('kurumiServerUrl') || '';
+        if (!serverUrl || serverUrl.includes('127.0.0.1')) {
+            showToast('Hãy nhập URL tunnel (Cloudflare/ngrok) trước!', 'warning');
+            return;
+        }
+        const shareLink = `${window.location.origin}${window.location.pathname}?server=${encodeURIComponent(serverUrl)}`;
+        navigator.clipboard.writeText(shareLink).then(() => {
+            showToast('✓ Đã copy link chia sẻ! Gửi cho bạn bè.', 'success');
+        });
     });
 
     // Check server status on load
