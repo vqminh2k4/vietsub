@@ -143,14 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.activeServerUrl = state.primaryUrl;
                 showToast("Connected to Local PC Server ⚡", "success");
                 return;
+            } else {
+                throw new Error("Server returned " + response.status);
             }
         } catch (e) {
-            console.log("Primary server unreachable, falling back to Hugging Face", e);
+            console.log("Primary server unreachable", e);
+            showToast("Máy chủ đang tắt. Vui lòng bật lại server ngrok trên máy tính của bạn!", "error");
+            throw new Error("Server offline");
         }
-        
-        // Fallback to HF
-        state.activeServerUrl = state.fallbackUrl;
-        showToast("Local PC is offline. Using Cloud Server ☁️ (Might take longer)", "info");
     }
 
     async function processUrl(url) {
