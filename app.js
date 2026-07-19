@@ -68,7 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function checkServerHealth(url) {
         try {
-            const res = await fetch(url.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(3000) });
+            const res = await fetch(url.replace(/\/$/, '') + '/health', { 
+                signal: AbortSignal.timeout(3000),
+                headers: { 'ngrok-skip-browser-warning': '1' }
+            });
             return res.ok;
         } catch { return false; }
     }
@@ -210,7 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(state.apiEndpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '1'
+                },
                 body: JSON.stringify({ url })
             });
 
