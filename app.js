@@ -37,98 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         isProcessing: false,
         isPlaying: false,
-        get serverUrl() {
-            return (localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869').replace(/\/$/, '');
-        },
+        serverUrl: 'https://subway-percent-senior.ngrok-free.dev',
         get apiEndpoint() {
             return this.serverUrl + '/cover';
         }
     };
 
-    // ─── Settings Modal ───────────────────────────────────────────────
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsClose = document.getElementById('settingsClose');
-    const serverUrlInput = document.getElementById('serverUrlInput');
-    const btnSaveSettings = document.getElementById('btnSaveSettings');
-    const serverStatusDot = document.getElementById('serverStatusDot');
-    const serverStatusText = document.getElementById('serverStatusText');
-
-    function loadSettings() {
-        serverUrlInput.value = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
-    }
-
-    // ── Tự động đọc ?server= từ URL (khi bạn bè mở share link) ──
-    const urlParams = new URLSearchParams(window.location.search);
-    const serverParam = urlParams.get('server');
-    if (serverParam) {
-        localStorage.setItem('kurumiServerUrl', serverParam);
-        // Xoa param khoi URL cho gon (khong reload)
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({}, '', cleanUrl);
-    }
-
-    async function checkServerHealth(url) {
-        try {
-            const res = await fetch(url.replace(/\/$/, '') + '/health', { 
-                signal: AbortSignal.timeout(3000),
-                headers: { 'ngrok-skip-browser-warning': '1' }
-            });
-            return res.ok;
-        } catch { return false; }
-    }
-
-    async function updateServerStatus() {
-        const url = localStorage.getItem('kurumiServerUrl') || 'http://127.0.0.1:7869';
-        serverStatusDot.style.background = '#888';
-        serverStatusText.textContent = 'Đang kiểm tra...';
-        const ok = await checkServerHealth(url);
-        if (ok) {
-            serverStatusDot.style.background = '#22c55e';
-            serverStatusDot.style.boxShadow = '0 0 6px #22c55e';
-            serverStatusText.textContent = 'Server Online ✓';
-        } else {
-            serverStatusDot.style.background = '#ef4444';
-            serverStatusDot.style.boxShadow = '0 0 6px #ef4444';
-            serverStatusText.textContent = 'Server Offline';
-        }
-    }
-
-    settingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-        loadSettings();
-        updateServerStatus();
-    });
-    settingsClose.addEventListener('click', () => settingsModal.style.display = 'none');
-    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.style.display = 'none'; });
-
-    btnSaveSettings.addEventListener('click', () => {
-        const val = serverUrlInput.value.trim();
-        if (val) {
-            localStorage.setItem('kurumiServerUrl', val);
-            showToast('Đã lưu URL server!', 'success');
-            updateServerStatus();
-        }
-    });
-
-    // Copy Share Link
-    const btnCopy = document.getElementById('btnCopyShareLink');
-    if (btnCopy) {
-        btnCopy.addEventListener('click', () => {
-            const serverUrl = serverUrlInput.value.trim() || localStorage.getItem('kurumiServerUrl') || '';
-            if (!serverUrl || serverUrl.includes('127.0.0.1')) {
-                showToast('Hãy nhập URL tunnel (Cloudflare/ngrok) trước!', 'warning');
-                return;
-            }
-            const shareLink = `${window.location.origin}${window.location.pathname}?server=${encodeURIComponent(serverUrl)}`;
-            navigator.clipboard.writeText(shareLink).then(() => {
-                showToast('✓ Đã copy link chia sẻ! Gửi cho bạn bè.', 'success');
-            });
-        });
-    }
-
-    // Check server status on load
-    updateServerStatus();
+    // Check server status in background (optional, just for network tab)
+    fetch(state.serverUrl + '/health', { headers: { 'ngrok-skip-browser-warning': '1' } }).catch(() => {});
 
 
     // Setup Clock Ticks

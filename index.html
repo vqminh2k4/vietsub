@@ -545,14 +545,7 @@
             </div>
         </a>
         <div class="header-controls">
-            <div class="header-badge">
-                <span class="dot" id="serverStatusDot"></span>
-                <span id="serverStatusText">Checking...</span>
-            </div>
-            <button id="settingsBtn" class="btn-header">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Server
-            </button>
+            <!-- Server button removed as requested by user -->
         </div>
     </header>
 
@@ -724,26 +717,7 @@
     <!-- TOAST CONTAINER -->
     <div id="toastContainer"></div>
 
-    <!-- SETTINGS MODAL -->
-    <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:9000;align-items:center;justify-content:center;">
-        <div style="background:#0f0507;border:1px solid rgba(255,42,58,0.4);border-radius:16px;padding:2rem;width:min(500px,92vw);position:relative;box-shadow:0 0 40px rgba(255,42,58,0.2);">
-            <button id="settingsClose" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;">✕</button>
-            <h2 style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;margin-bottom:0.3rem;">⚙ Server Settings</h2>
-            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:1.5rem;">Configure Kurumi Server connection.</p>
-
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.2rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.5);border-radius:8px;border:1px solid rgba(255,42,58,0.2);">
-                <div id="serverStatusDot" style="width:8px;height:8px;border-radius:50%;background:#888;"></div>
-                <span id="serverStatusText" style="font-size:0.85rem;">Checking...</span>
-            </div>
-
-            <label style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--clr-red-bright);font-weight:600;display:block;margin-bottom:0.5rem;">Server URL</label>
-            <input id="serverUrlInput" type="url" placeholder="http://127.0.0.1:7869" style="width:100%;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:0.75rem 1rem;font-family:var(--font-body);font-size:0.9rem;color:white;outline:none;margin-bottom:1.5rem;transition:0.3s;" onfocus="this.style.borderColor='#ff2a3a'">
-
-            <div style="display:flex;gap:10px;">
-                <button id="btnSaveSettings" style="flex:1;height:44px;background:linear-gradient(90deg,#d31027,#ea384d);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;">Save & Check</button>
-            </div>
-        </div>
-    </div>
+    <!-- SETTINGS MODAL REMOVED -->
 
     <script src="app.js"></script>
 </body>
