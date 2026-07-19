@@ -1,18 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Kurumi Music Cover — Transform any song into a Kurumi Tokisaki AI vocal cover. Paste a YouTube link or upload audio and hear your favorite songs in Kurumi's voice.">
-    <meta name="keywords" content="Kurumi Tokisaki, AI cover, music cover, Date A Live, anime voice, RVC, vocal cover">
-    <title>Kurumi Music Cover — 時崎狂三 AI Voice</title>
+import re
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+with open('index.html', 'r', encoding='utf-8') as f:
+    html = f.read()
 
-    <style>
-
+# I will write the new CSS and HTML structure.
+new_css = '''
         /* CSS CUSTOM PROPERTIES */
         :root {
             --clr-bg:          #070305;
@@ -503,10 +495,13 @@
         ::-webkit-scrollbar-track { background: var(--clr-bg); }
         ::-webkit-scrollbar-thumb { background: rgba(255,42,58,0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,42,58,0.5); }
-    
-    </style>
-</head>
+    '''
 
+# Re-assemble HTML
+html_start = html.split('<style>')[0]
+html_end = html.split('</style>')[1]
+
+body_new = '''
 <body>
     <canvas id="particles-canvas"></canvas>
 
@@ -733,3 +728,10 @@
     <script src="app.js"></script>
 </body>
 </html>
+'''
+
+end_html = html_start + '<style>\n' + new_css + '\n    </style>\n</head>\n' + body_new
+
+with open('index.html', 'w', encoding='utf-8') as f:
+    f.write(end_html)
+print("Updated index.html")
