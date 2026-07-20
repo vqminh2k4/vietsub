@@ -99,6 +99,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Elaina's enchanting voice.`;
                 document.querySelector('.processing-title').textContent = `Elaina is singing...`;
                 document.querySelector('.result-info h3').textContent = `Elaina (Wandering Witch)`;
+            } else if (state.selectedVoice === 'miku') {
+                document.body.style.backgroundImage = "url('miku/anh_nen.png')";
+                document.querySelector('.chibi-kurumi').src = "miku/anh_nho_backup.png";
+                
+                // Miku Theme (Cyan/Teal)
+                root.style.setProperty('--clr-red', '#06b6d4'); 
+                root.style.setProperty('--clr-red-bright', '#22d3ee');
+                root.style.setProperty('--clr-red-dark', '#0891b2');
+                root.style.setProperty('--clr-border', 'rgba(6, 182, 212, 0.5)');
+                root.style.setProperty('--clr-border-glow', 'rgba(34, 211, 238, 0.8)');
+                
+                document.querySelector('.hero-eyebrow').innerHTML = `NAKANO MIKU • QUINTESSENTIAL QUINTUPLETS <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
+                document.querySelector('.hero-title').innerHTML = `Turn Any Song Into<br><span class="highlight">A Miku Cover</span>`;
+                document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Nakano Miku's iconic voice.`;
+                document.querySelector('.processing-title').textContent = `Miku is singing...`;
+                document.querySelector('.result-info h3').textContent = `Nakano Miku (Quintessential Quintuplets)`;
             } else {
                 document.body.style.backgroundImage = "url('img/anh_nen.png')";
                 document.querySelector('.chibi-kurumi').src = "img/anh_nho.png";
