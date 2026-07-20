@@ -64,7 +64,7 @@
             content: '';
             position: fixed;
             inset: 0;
-            background: linear-gradient(90deg, rgba(5,0,0,0.95) 0%, rgba(15,0,0,0.85) 30%, rgba(20,0,0,0.5) 60%, transparent 100%);
+            background: linear-gradient(90deg, rgba(5,0,0,0.9) 0%, rgba(15,0,0,0.65) 30%, rgba(20,0,0,0.2) 60%, transparent 100%);
             pointer-events: none;
             z-index: 0;
         }
@@ -176,31 +176,65 @@
             background: rgba(255,255,255,0.1);
         }
 
-        /* MAIN LAYOUT */
+        /* MAIN LAYOUT (FULL-SCREEN PLAYER) */
         main {
             position: relative;
             z-index: 2;
             flex: 1;
             display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Anchor content to the bottom */
             align-items: center;
-            padding: 0 4rem;
+            padding: 2rem 4rem 4rem 4rem;
         }
 
-        .layout-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            gap: 2rem;
-        }
-
-        .left-col {
-            max-width: 600px;
+        .player-container {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-end;
+            width: 100%;
+            flex: 1; /* Stretch to fill main so we can push items to the top */
+            max-width: 750px; /* Keep it compact so characters on sides are visible */
+            transform: scale(0.95);
+            transform-origin: bottom center;
+            margin: 0 auto;
+            gap: 2rem;
+            z-index: 10;
         }
+
+        .hero-text-wrapper {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding-top: 2rem;
+            transition: margin-bottom 0.5s ease;
+        }
+        
+        body.is-playing .hero-text-wrapper {
+            margin-bottom: auto; /* Push text to the top */
+        }
+        
+        body.is-playing .hero-desc {
+            display: none; /* Hide subtitle */
+        }
+
+        .interaction-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Glass Panel Styling for Bottom UI */
+        .glass-panel {
+            background: rgba(10, 5, 15, 0.6) !important;
+            backdrop-filter: blur(20px) saturate(1.5) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+            border: 1px solid var(--clr-border) !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05) !important;
+            width: 100%;
+        }
+
+
 
         /* VOICE SELECTOR */
         .voice-selector {
@@ -245,6 +279,49 @@
         }
         .voice-option.active span {
             color: #fff;
+        }
+        
+        /* DUET TOGGLE */
+        .duet-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--clr-text-muted);
+            transition: var(--transition);
+        }
+        .duet-toggle:hover {
+            color: white;
+        }
+        .duet-toggle input {
+            appearance: none;
+            width: 32px;
+            height: 18px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .duet-toggle input::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        .duet-toggle input:checked {
+            background: #a020f0; /* Tím pha đỏ */
+            box-shadow: 0 0 10px rgba(160, 32, 240, 0.5);
+        }
+        .duet-toggle input:checked::after {
+            transform: translateX(14px);
         }
 
         /* TEXT UTILS */
@@ -385,15 +462,15 @@
             align-items: center;
             gap: 10px;
         }
-        .input-label svg { stroke: var(--clr-red-bright); }
-
-        .url-row {
+        .input-label svg { stroke: var(--clr-red-bright); }        .input-row-compact {
             display: flex;
+            align-items: center;
             gap: 12px;
+            margin-top: 15px;
         }
         .url-field-wrap {
             position: relative;
-            flex: 1;
+            flex: 2; /* takes more space */
         }
         .url-icon-prefix {
             position: absolute;
@@ -410,7 +487,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             padding: 0 1rem 0 3rem;
-            height: 52px;
+            height: 48px;
             font-family: var(--font-body);
             font-size: 0.9rem;
             color: var(--clr-text);
@@ -420,31 +497,126 @@
         .url-field:focus {
             border-color: var(--clr-red-bright);
             background: rgba(0,0,0,0.8);
-            box-shadow: inset 0 0 10px rgba(255,0,0,0.1);
+            box-shadow: 0 0 15px rgba(255, 42, 58, 0.3);
+        }
+        
+        .drop-zone-compact {
+            flex: 1;
+            height: 48px;
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.3);
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+            font-size: 0.85rem;
+            color: var(--clr-text-muted);
+        }
+        .drop-zone-compact:hover {
+            border-color: var(--clr-red-bright);
+            background: rgba(255,42,58,0.1);
+            color: #fff;
         }
 
         .btn-cover {
-            height: 52px;
-            padding: 0 1.5rem;
+            height: 48px;
+            background: var(--clr-red-bright);
+            color: white;
             border: none;
             border-radius: 8px;
-            font-family: var(--font-body);
-            font-size: 0.95rem;
-            font-weight: 600;
+            padding: 0 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
-            display: inline-flex;
+            display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             transition: var(--transition);
-            white-space: nowrap;
-            background: linear-gradient(90deg, #d31027, #ea384d);
-            color: white;
-            box-shadow: 0 4px 15px rgba(211, 16, 39, 0.4);
+            box-shadow: 0 0 20px var(--clr-red-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .btn-cover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(211, 16, 39, 0.6);
-            filter: brightness(1.1);
+            background: #fff;
+            color: var(--clr-red-bright);
+            box-shadow: 0 0 30px rgba(255,255,255,0.8);
+        }
+        
+        /* PLAYER BAR STYLES */
+        .player-bar {
+            width: 100%;
+            border-radius: 16px;
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        .player-bar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 25px;
+            position: relative;
+            z-index: 5;
+            gap: 20px;
+        }
+        
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 250px;
+        }
+        
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid var(--clr-red-bright);
+            box-shadow: 0 0 10px var(--clr-red-glow);
+        }
+        
+        .player-text h3 {
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+        .player-text p {
+            font-size: 0.75rem;
+            color: var(--clr-text-muted);
+        }
+        
+        .player-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .audio-player {
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .player-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 250px;
+            justify-content: flex-end;
         }
 
         .separator {
@@ -664,89 +836,82 @@
 
     <!-- MAIN -->
     <main>
-        <div class="layout-grid">
-            <div class="left-col">
-                <!-- TEXT -->
+        <!-- PLAYER LAYOUT -->
+        <div class="player-container">
+            <!-- FULL-SCREEN VISUALIZER CANVAS (Hidden by default, shown when result is active) -->
+            <canvas id="resultCanvas" width="1200" height="400" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 1200px; height: auto; z-index: 1; pointer-events: none;"></canvas>
+
+            <!-- TEXT SECTION (Top Center) -->
+            <div class="hero-text-wrapper" style="position: relative; z-index: 10;">
                 <div class="hero-eyebrow">
                     TOKISAKI KURUMI • DATE A LIVE
-                    <svg viewBox="0 0 24 24"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-left: 5px;"><path d="M12 18.5l-3-2-2-4 1-3 3 1 1-1v4l2 1zM20 9l-4-1-2 3v3l2 4 4 1-1-3 2-2-3-3zM4 9l4-1 2 3v3l-2 4-4 1 1-3-2-2 3-3z"/></svg>
                 </div>
                 <h1 class="hero-title">Turn Any Song Into<br><span class="highlight">A Kurumi Cover</span></h1>
                 <p class="hero-desc">Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Kurumi Tokisaki's enchanting voice.</p>
+            </div>
 
-                <!-- INTERACTION PANELS (INPUT / PROCESSING / RESULT) -->
+            <!-- INTERACTION PANELS (Bottom Center) -->
+            <div class="interaction-area">
                 
                 <!-- INPUT CARD -->
-                <div class="card" id="inputCard">
+                <div class="card glass-panel" id="inputCard">
                     <img src="img/anh_nho.png" class="chibi-image chibi-kurumi" id="chibiImage" alt="Chibi">
                     <div class="card-border">
-                        <div class="corner tl"></div>
-                        <div class="corner tr"></div>
-                        <div class="corner bl"></div>
-                        <div class="corner br"></div>
+                        <div class="corner tl"></div><div class="corner tr"></div>
+                        <div class="corner bl"></div><div class="corner br"></div>
                         <div class="card-rose">✿</div>
                     </div>
                     
                     <div class="card-content">
                         <!-- Character Selection -->
-                        <div class="input-label" style="margin-bottom: 10px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            SELECT CHARACTER
+                        <div class="input-label" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                SELECT CHARACTER
+                            </div>
+                            <label class="duet-toggle" title="Select 2 characters to sing together">
+                                <input type="checkbox" id="duetToggle">
+                                <span>Duet Mode</span>
+                            </label>
                         </div>
                         <div class="voice-selector" id="voiceSelector">
                             <div class="voice-option active" data-voice="kurumi">
-                                <img src="avatar/avatar_kurumi.png" alt="Kurumi">
-                                <span>Kurumi</span>
+                                <img src="avatar/avatar_kurumi.png" alt="Kurumi"><span>Kurumi</span>
                             </div>
                             <div class="voice-option" data-voice="elaina">
-                                <img src="avatar/avatar_elaina.png" alt="Elaina">
-                                <span>Elaina</span>
+                                <img src="avatar/avatar_elaina.png" alt="Elaina"><span>Elaina</span>
                             </div>
                             <div class="voice-option" data-voice="miku">
-                                <img src="avatar/avatar_miku.png" alt="Miku">
-                                <span>Miku</span>
+                                <img src="avatar/avatar_miku.png" alt="Miku"><span>Miku</span>
                             </div>
                         </div>
 
-                        <!-- URL Input -->
-                        <div class="input-label" style="margin-top: 20px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                            PASTE MUSIC LINK
-                        </div>
-                        <div class="url-row">
+                        <!-- URL Input & File Upload in one line if possible, or compact -->
+                        <div class="input-row-compact">
                             <div class="url-field-wrap">
                                 <div class="url-icon-prefix">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.5 15.6V8.4L16 12l-6.5 3.6z"/></svg>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.5 15.6V8.4L16 12l-6.5 3.6z"/></svg>
                                 </div>
-                                <input type="url" id="urlInput" class="url-field" placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false">
+                                <input type="url" id="urlInput" class="url-field" placeholder="Paste YouTube link..." autocomplete="off" spellcheck="false">
                             </div>
+                            
+                            <div class="drop-zone-compact" id="dropZone">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                <span>Upload Audio</span>
+                                <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+                            </div>
+                            
                             <button class="btn-cover" id="btnGenerate">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                Generate Cover
+                                Generate
                             </button>
-                        </div>
-
-                        <!-- Separator -->
-                        <div class="separator">
-                            <div class="separator-line"></div>
-                            <span class="separator-text">OR UPLOAD AUDIO</span>
-                            <div class="separator-line"></div>
-                        </div>
-
-                        <!-- File Drop Zone -->
-                        <div class="drop-zone" id="dropZone">
-                            <div class="drop-zone-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                            </div>
-                            <p>Drop your audio file here or <span class="highlight">click to browse</span></p>
-                            <p class="drop-zone-sub">Supports MP3, WAV, OGG, FLAC, M4A</p>
-                            <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a">
                         </div>
                     </div>
                 </div>
 
                 <!-- PROCESSING CARD -->
-                <div class="card glass-card" id="processingPanel">
+                <div class="card glass-card" id="processingPanel" style="display: none;">
                     <div class="card-border">
                         <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
                     </div>
@@ -754,18 +919,7 @@
                         <div class="floating-bg" id="floatingBg"></div>
                         
                         <div class="processing-hero">
-                            <div class="audio-wave left">
-                                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
-                            </div>
-                            <div class="processing-avatar-container">
-                                <img src="avatar/avatar_kurumi.png" class="processing-avatar" id="processingAvatarImg" alt="Avatar">
-                                <div class="avatar-ring"></div>
-                                <div class="avatar-glow"></div>
-                                <div class="avatar-sparkles">✨</div>
-                            </div>
-                            <div class="audio-wave right">
-                                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
-                            </div>
+                            <canvas id="processingCanvas" width="800" height="200" style="width: 100%; height: 150px; display: block; margin: 0 auto; filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));"></canvas>
                         </div>
 
                         <h2 class="processing-main-title" id="processingMainTitle">🎙 AI ĐANG TỔNG HỢP GIỌNG NÓI</h2>
@@ -781,46 +935,31 @@
                             <div class="progress-percentage" id="progressPercentageText">0%</div>
                         </div>
 
-                        <div class="timeline-container">
+                        <!-- compact timeline -->
+                        <div class="timeline-container compact-timeline">
                             <div class="timeline-step active" id="step1">
                                 <div class="step-icon">∿</div>
-                                <div class="step-text">
-                                    <h4>PHÂN TÍCH</h4>
-                                    <p>Cao độ & Nhịp</p>
-                                </div>
+                                <div class="step-text"><h4>PHÂN TÍCH</h4></div>
                             </div>
                             <div class="timeline-line-wrapper"><div class="timeline-line-fill" id="timelineLine1"></div></div>
                             <div class="timeline-step" id="step2">
                                 <div class="step-icon">✧</div>
-                                <div class="step-text">
-                                    <h4>LỌC NHIỄU</h4>
-                                    <p>Tối ưu giọng</p>
-                                </div>
+                                <div class="step-text"><h4>LỌC NHIỄU</h4></div>
                             </div>
                             <div class="timeline-line-wrapper"><div class="timeline-line-fill" id="timelineLine2"></div></div>
                             <div class="timeline-step" id="step3">
                                 <div class="step-icon">🎙</div>
-                                <div class="step-text">
-                                    <h4>AI COVER</h4>
-                                    <p>Tổng hợp vocal</p>
-                                </div>
+                                <div class="step-text"><h4>AI COVER</h4></div>
                             </div>
                             <div class="timeline-line-wrapper"><div class="timeline-line-fill" id="timelineLine3"></div></div>
                             <div class="timeline-step" id="step4">
                                 <div class="step-icon">♫</div>
-                                <div class="step-text">
-                                    <h4>XUẤT FILE</h4>
-                                    <p>Render & Mix</p>
-                                </div>
+                                <div class="step-text"><h4>XUẤT FILE</h4></div>
                             </div>
                         </div>
 
                         <div class="processing-footer">
-                            <div class="tips-box">
-                                <span class="tips-icon">💡</span>
-                                <span id="processingTip">Mẹo: AI đang giữ nguyên cảm xúc bài hát...</span>
-                            </div>
-                            <div class="timer-box">
+                            <div class="timer-box" style="margin: 0 auto;">
                                 <span class="timer-label">ETA CÒN</span>
                                 <span class="timer-value" id="processingETA">--:--</span>
                                 <span class="timer-label">/ ĐÃ QUA</span>
@@ -830,51 +969,55 @@
                     </div>
                 </div>
 
-                <!-- RESULT CARD -->
-                <div class="card" id="resultPanel">
+                <!-- RESULT PANEL (Bottom Player) -->
+                <div class="player-bar glass-panel" id="resultPanel" style="display: none;">
                     <div class="card-border">
                         <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
                     </div>
-                    <div class="card-content">
-                        <div class="result-header">
-                            <div class="result-avatar"></div>
-                            <div class="result-info">
-                                <h3>Kurumi Tokisaki</h3>
+                    
+                    <div class="player-bar-inner">
+                        <!-- LEFT: Info -->
+                        <div class="player-info">
+                            <div class="player-avatar" id="resultAvatar"></div>
+                            <div class="player-text">
+                                <h3 id="resultTitle">Kurumi Tokisaki</h3>
                                 <p id="resultSourceLabel">AI Vocal Cover</p>
                             </div>
                         </div>
 
-                        <div class="audio-player">
-                            <div class="player-controls">
-                                <button class="btn-play-round" id="btnPlayPause">
-                                    <svg id="iconPlay" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                    <svg id="iconPause" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                                </button>
-                                <div class="progress-audio" id="audioProgress">
-                                    <div class="progress-audio-fill" id="audioProgressFill"></div>
+                        <!-- CENTER: Visualizer & Controls -->
+                        <div class="player-center">
+                            <!-- Visualizer absolute covering the whole screen, canvas moved to background -->
+                            <!-- BUT WAIT! Visualizer canvas needs to be large! -->
+                            
+                            <div class="audio-player">
+                                <div class="player-controls">
+                                    <button class="btn-play-round" id="btnPlayPause">
+                                        <svg id="iconPlay" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                        <svg id="iconPause" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                    </button>
+                                    <div class="progress-audio" id="audioProgress">
+                                        <div class="progress-audio-fill" id="audioProgressFill"></div>
+                                    </div>
+                                    <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
                                 </div>
-                                <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
                             </div>
+                            <audio id="audioPlayer"></audio>
                         </div>
 
-                        <audio id="audioPlayer"></audio>
-
-                        <div class="result-actions">
-                            <a href="#" class="btn-download main" id="btnDownload" download="kurumi-cover.mp3">
+                        <!-- RIGHT: Actions -->
+                        <div class="player-actions">
+                            <a href="#" class="btn-download main" id="btnDownload" download="cover.mp3">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                Download MP3
+                                <span>Download</span>
                             </a>
                             <button class="btn-download ghost" id="btnNewCover">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
-                                New Cover
+                                <span>New</span>
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="right-col">
-                <!-- Empty space for the background character to shine -->
             </div>
         </div>
     </main>
