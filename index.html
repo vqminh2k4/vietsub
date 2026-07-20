@@ -313,14 +313,30 @@
         .corner.br { bottom: -4px; right: -4px; }
         
         /* Chibi image */
-        .chibi-kurumi {
+        .chibi-image {
             position: absolute;
-            top: -80px;
-            right: -25px;
-            height: 116px;
             z-index: 10;
             pointer-events: none;
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+            transition: all 0.3s ease;
+        }
+        
+        .chibi-kurumi {
+            top: -80px;
+            right: -25px;
+            height: 116px;
+        }
+
+        .chibi-elaina {
+            top: -95px;
+            right: -25px;
+            height: 100px;
+        }
+
+        .chibi-miku {
+            top: -95px;
+            right: -25px;
+            height: 100px;
         }
         
         /* Decorative top center rose */
@@ -610,7 +626,7 @@
                 
                 <!-- INPUT CARD -->
                 <div class="card" id="inputCard">
-                    <img src="img/anh_nho.png" class="chibi-kurumi" alt="Chibi Kurumi">
+                    <img src="img/anh_nho.png" class="chibi-image chibi-kurumi" id="chibiImage" alt="Chibi">
                     <div class="card-border">
                         <div class="corner tl"></div>
                         <div class="corner tr"></div>

@@ -83,9 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Swap Theme
             const root = document.documentElement;
+            const chibiImg = document.getElementById('chibiImage');
+            
             if (state.selectedVoice === 'elaina') {
                 document.body.style.backgroundImage = "url('elaina/anh_nen.png')";
-                document.querySelector('.chibi-kurumi').src = "elaina/anh_nho - Copy.png";
+                if (chibiImg) {
+                    chibiImg.src = "elaina/anh_nho - Copy.png";
+                    chibiImg.className = "chibi-image chibi-elaina";
+                }
                 
                 // Elaina Theme (Purple/White)
                 root.style.setProperty('--clr-red', '#7e22ce'); 
@@ -103,7 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (subtitle) subtitle.textContent = `イレイナ AI Cover`;
             } else if (state.selectedVoice === 'miku') {
                 document.body.style.backgroundImage = "url('miku/anh_nen.png')";
-                document.querySelector('.chibi-kurumi').src = "miku/anh_nho_backup.png";
+                if (chibiImg) {
+                    chibiImg.src = "miku/anh_nho_backup.png";
+                    chibiImg.className = "chibi-image chibi-miku";
+                }
                 
                 // Miku Theme (Cyan/Teal)
                 root.style.setProperty('--clr-red', '#06b6d4'); 
@@ -121,7 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (subtitle) subtitle.textContent = `中野三玖 AI Cover`;
             } else {
                 document.body.style.backgroundImage = "url('img/anh_nen.png')";
-                document.querySelector('.chibi-kurumi').src = "img/anh_nho.png";
+                if (chibiImg) {
+                    chibiImg.src = "img/anh_nho.png";
+                    chibiImg.className = "chibi-image chibi-kurumi";
+                }
                 
                 // Kurumi Theme (Red/Black)
                 root.style.setProperty('--clr-red', '#d31027'); 
