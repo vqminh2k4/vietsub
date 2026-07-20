@@ -111,10 +111,13 @@
             transform-box: view-box;
         }
         #clockMinute {
-            animation: spin 3s linear infinite;
+            animation: spin 3s linear infinite reverse;
         }
         #clockHour {
-            animation: spin 36s linear infinite;
+            animation: spin 36s linear infinite reverse;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         .logo-name {
             font-family: var(--font-heading);
@@ -532,19 +535,58 @@
         }
         #processingPanel.active, #resultPanel.active { display: block; }
 
-        .clock-spinner { width: 80px; height: 80px; margin: 0 auto 1.5rem; position: relative; }
-        .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--clr-red-bright); border-right-color: var(--clr-red); animation: spin 1.4s infinite; }
-        .spinner-ring-2 { position: absolute; inset: 6px; border-radius: 50%; border: 1.5px solid transparent; border-bottom-color: var(--clr-gold); opacity: 0.7; animation: spin 2.1s infinite reverse; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* NEW HOYOVERSE AI UI */
+        .glass-card { background: rgba(10, 5, 20, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 40, 100, 0.3); box-shadow: 0 0 30px rgba(100, 20, 200, 0.2), inset 0 0 20px rgba(255, 40, 100, 0.1); overflow: hidden; position: relative; }
+        .processing-dashboard { position: relative; z-index: 2; padding: 2.5rem 1.5rem; }
+        .floating-bg { position: absolute; inset: 0; background-image: radial-gradient(circle at 20% 30%, rgba(255, 40, 100, 0.1) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(100, 20, 255, 0.15) 0%, transparent 40%); z-index: 0; opacity: 0.8; }
         
-        .processing-title { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.1em; }
-        .processing-sub { font-size: 0.9rem; color: var(--clr-text-muted); }
-        .progress-track { margin-top: 1.5rem; height: 3px; background: rgba(255,255,255,0.1); border-radius: var(--radius-full); }
-        .progress-fill-bar { height: 100%; background: var(--clr-red-bright); border-radius: var(--radius-full); width: 0%; box-shadow: 0 0 10px var(--clr-red-bright); transition: width 0.4s ease; }
-        .processing-timer { color: var(--clr-text); font-family: var(--font-heading); font-size: 1.2rem; margin-top: 1rem; font-weight: 600; letter-spacing: 2px; }
+        .processing-hero { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 1.5rem; position: relative; z-index: 2; }
+        .processing-avatar-container { position: relative; width: 110px; height: 110px; display: flex; align-items: center; justify-content: center; }
+        .processing-avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; z-index: 2; border: 2px solid transparent; background-clip: padding-box; position: relative; box-shadow: 0 0 20px rgba(255, 40, 100, 0.6); animation: avatar-pulse 2s infinite alternate; }
+        .avatar-ring { position: absolute; inset: 0; border-radius: 50%; padding: 3px; background: linear-gradient(45deg, #a020f0, #ff2a3a, #a020f0); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: spin-magic 4s linear infinite; }
+        .avatar-glow { position: absolute; inset: -20px; background: radial-gradient(circle, rgba(255, 42, 58, 0.4) 0%, transparent 70%); z-index: 0; animation: heartbeat 2s infinite; }
+        .avatar-sparkles { position: absolute; top: -5px; right: -5px; font-size: 1.5rem; animation: float-text 2s ease-in-out infinite; z-index: 3; }
+        
+        .audio-wave { display: flex; align-items: center; gap: 4px; height: 40px; }
+        .wave-bar { width: 4px; background: rgba(255, 42, 58, 0.8); border-radius: 2px; animation: eq 1s ease-in-out infinite alternate; box-shadow: 0 0 8px rgba(255, 42, 58, 0.8); }
+        .wave-bar:nth-child(1) { height: 30%; animation-delay: 0.1s; } .wave-bar:nth-child(2) { height: 70%; animation-delay: 0.3s; } .wave-bar:nth-child(3) { height: 100%; animation-delay: 0.0s; } .wave-bar:nth-child(4) { height: 60%; animation-delay: 0.2s; } .wave-bar:nth-child(5) { height: 40%; animation-delay: 0.4s; }
+        
+        .processing-main-title { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px var(--clr-red-dark); margin-bottom: 0.5rem; position: relative; z-index: 2; }
+        .processing-sub-title { font-size: 0.95rem; color: #d0d0ff; margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 8px; position: relative; z-index: 2; }
+        .processing-sub-title::before, .processing-sub-title::after { content: '✧'; font-size: 0.8rem; color: var(--clr-red-bright); opacity: 0.8; }
+        
+        .progress-section { margin-bottom: 2rem; position: relative; z-index: 2; text-align: left; }
+        .progress-track.enhanced { height: 14px; background: rgba(0,0,0,0.6); border-radius: 10px; border: 1px solid rgba(160, 32, 240, 0.4); box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); overflow: visible; position: relative; }
+        .progress-fill-bar.enhanced { height: 100%; background: linear-gradient(90deg, #5b10ff, #ff2a3a); border-radius: 8px; width: 0%; box-shadow: 0 0 15px rgba(255, 42, 58, 0.8), inset 0 2px 4px rgba(255,255,255,0.3); transition: width 0.3s ease; position: relative; }
+        .progress-head { position: absolute; right: -12px; top: -12px; font-size: 1.4rem; color: #fff; text-shadow: 0 0 10px #ff2a3a; filter: drop-shadow(0 0 5px #ff2a3a); }
+        .progress-shimmer { position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite; border-radius: 8px; }
+        .progress-percentage { position: absolute; right: 0; top: -25px; font-weight: 700; color: #fff; text-shadow: 0 0 5px #ff2a3a; font-family: var(--font-heading); }
+        
+        .timeline-container { display: flex; justify-content: space-between; align-items: flex-start; position: relative; margin-bottom: 2.5rem; z-index: 2; }
+        .timeline-line-wrapper { flex-grow: 1; height: 2px; background: rgba(255,255,255,0.1); margin: 15px 10px 0; position: relative; }
+        .timeline-line-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: linear-gradient(90deg, #5b10ff, #ff2a3a); box-shadow: 0 0 8px #ff2a3a; transition: width 0.3s ease; }
+        .timeline-step { display: flex; flex-direction: column; align-items: center; width: 80px; opacity: 0.5; transition: opacity 0.3s ease, transform 0.3s ease; }
+        .timeline-step.active { opacity: 1; transform: translateY(-2px); }
+        .timeline-step.active .step-icon { border-color: #ff2a3a; color: #fff; box-shadow: 0 0 15px rgba(255, 42, 58, 0.5); background: rgba(255, 42, 58, 0.2); }
+        .step-icon { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 8px; background: rgba(0,0,0,0.5); z-index: 1; transition: all 0.3s ease; }
+        .step-text h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #fff; margin-bottom: 2px; }
+        .step-text p { font-size: 0.65rem; color: var(--clr-text-muted); }
+        
+        .processing-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; position: relative; z-index: 2; }
+        .tips-box { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #d0d0ff; text-align: left; max-width: 60%; }
+        .tips-icon { color: #ffeb3b; filter: drop-shadow(0 0 5px #ffeb3b); flex-shrink: 0; }
+        .timer-box { font-family: var(--font-heading); display: flex; align-items: baseline; gap: 6px; }
+        .timer-label { font-size: 0.65rem; color: var(--clr-text-muted); text-transform: uppercase; }
+        .timer-value { font-size: 1.0rem; color: #fff; font-weight: 700; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+
+        @keyframes avatar-pulse { 0% { box-shadow: 0 0 10px rgba(255, 40, 100, 0.4); } 100% { box-shadow: 0 0 30px rgba(100, 20, 255, 0.8); } }
+        @keyframes spin-magic { 100% { transform: rotate(360deg); } }
+        @keyframes heartbeat { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.2); } }
+        @keyframes eq { 0% { height: 20%; } 100% { height: 100%; } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
         .result-header { display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem; }
-        .result-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--clr-red-bright); background: url('img/anh_nho.png') center/cover; }
+        .result-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--clr-red-bright); background: url('avatar/avatar_kurumi.png') center/cover; }
         .result-info { text-align: left; }
         .result-info h3 { font-family: var(--font-heading); font-size: 1.1rem; }
         .result-info p { font-size: 0.8rem; color: var(--clr-text-muted); }
@@ -653,15 +695,15 @@
                         </div>
                         <div class="voice-selector" id="voiceSelector">
                             <div class="voice-option active" data-voice="kurumi">
-                                <img src="img/anh_nho.png" alt="Kurumi">
+                                <img src="avatar/avatar_kurumi.png" alt="Kurumi">
                                 <span>Kurumi</span>
                             </div>
                             <div class="voice-option" data-voice="elaina">
-                                <img src="elaina/anh_nho - Copy.png" alt="Elaina">
+                                <img src="avatar/avatar_elaina.png" alt="Elaina">
                                 <span>Elaina</span>
                             </div>
                             <div class="voice-option" data-voice="miku">
-                                <img src="miku/anh_nho_backup.png" alt="Miku">
+                                <img src="avatar/avatar_miku.png" alt="Miku">
                                 <span>Miku</span>
                             </div>
                         </div>
@@ -704,21 +746,87 @@
                 </div>
 
                 <!-- PROCESSING CARD -->
-                <div class="card" id="processingPanel">
+                <div class="card glass-card" id="processingPanel">
                     <div class="card-border">
                         <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
                     </div>
-                    <div class="card-content">
-                        <div class="clock-spinner">
-                            <div class="spinner-ring"></div>
-                            <div class="spinner-ring-2"></div>
+                    <div class="card-content processing-dashboard">
+                        <div class="floating-bg" id="floatingBg"></div>
+                        
+                        <div class="processing-hero">
+                            <div class="audio-wave left">
+                                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                            </div>
+                            <div class="processing-avatar-container">
+                                <img src="avatar/avatar_kurumi.png" class="processing-avatar" id="processingAvatarImg" alt="Avatar">
+                                <div class="avatar-ring"></div>
+                                <div class="avatar-glow"></div>
+                                <div class="avatar-sparkles">✨</div>
+                            </div>
+                            <div class="audio-wave right">
+                                <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                            </div>
                         </div>
-                        <p class="processing-title">Kurumi is singing...</p>
-                        <p class="processing-sub" id="processingMsg">Job started...</p>
-                        <div class="progress-track">
-                            <div class="progress-fill-bar" id="progressBar"></div>
+
+                        <h2 class="processing-main-title" id="processingMainTitle">🎙 AI ĐANG TỔNG HỢP GIỌNG NÓI</h2>
+                        <p class="processing-sub-title" id="processingSubTitle">Đang phân tích cao độ...</p>
+
+                        <div class="progress-section">
+                            <div class="progress-track enhanced">
+                                <div class="progress-fill-bar enhanced" id="progressBar">
+                                    <div class="progress-head">♪</div>
+                                    <div class="progress-shimmer"></div>
+                                </div>
+                            </div>
+                            <div class="progress-percentage" id="progressPercentageText">0%</div>
                         </div>
-                        <p class="processing-timer" id="processingTimer">00:00</p>
+
+                        <div class="timeline-container">
+                            <div class="timeline-step active" id="step1">
+                                <div class="step-icon">∿</div>
+                                <div class="step-text">
+                                    <h4>PHÂN TÍCH</h4>
+                                    <p>Cao độ & Nhịp</p>
+                                </div>
+                            </div>
+                            <div class="timeline-line-wrapper"><div class="timeline-line-fill" id="timelineLine1"></div></div>
+                            <div class="timeline-step" id="step2">
+                                <div class="step-icon">✧</div>
+                                <div class="step-text">
+                                    <h4>LỌC NHIỄU</h4>
+                                    <p>Tối ưu giọng</p>
+                                </div>
+                            </div>
+                            <div class="timeline-line-wrapper"><div class="timeline-line-fill" id="timelineLine2"></div></div>
+                            <div class="timeline-step" id="step3">
+                                <div class="step-icon">🎙</div>
+                                <div class="step-text">
+                                    <h4>AI COVER</h4>
+                                    <p>Tổng hợp vocal</p>
+                                </div>
+                            </div>
+                            <div class="timeline-line-wrapper"><div class="timeline-line-fill" id="timelineLine3"></div></div>
+                            <div class="timeline-step" id="step4">
+                                <div class="step-icon">♫</div>
+                                <div class="step-text">
+                                    <h4>XUẤT FILE</h4>
+                                    <p>Render & Mix</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="processing-footer">
+                            <div class="tips-box">
+                                <span class="tips-icon">💡</span>
+                                <span id="processingTip">Mẹo: AI đang giữ nguyên cảm xúc bài hát...</span>
+                            </div>
+                            <div class="timer-box">
+                                <span class="timer-label">ETA CÒN</span>
+                                <span class="timer-value" id="processingETA">--:--</span>
+                                <span class="timer-label">/ ĐÃ QUA</span>
+                                <span class="timer-value" id="processingTimer">00:00</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -30,7 +30,27 @@ document.addEventListener('DOMContentLoaded', () => {
         btnDownload: document.getElementById('btnDownload'),
         btnNewCover: document.getElementById('btnNewCover'),
         
-        toastContainer: document.getElementById('toastContainer')
+        toastContainer: document.getElementById('toastContainer'),
+        
+        // NEW HOYOVERSE UI ELEMENTS
+        processingMainTitle: document.getElementById('processingMainTitle'),
+        processingSubTitle: document.getElementById('processingSubTitle'),
+        progressPercentageText: document.getElementById('progressPercentageText'),
+        processingAvatarImg: document.getElementById('processingAvatarImg'),
+        processingTip: document.getElementById('processingTip'),
+        processingETA: document.getElementById('processingETA'),
+        timelineSteps: [
+            document.getElementById('step1'),
+            document.getElementById('step2'),
+            document.getElementById('step3'),
+            document.getElementById('step4')
+        ],
+        timelineLines: [
+            document.getElementById('timelineLine1'),
+            document.getElementById('timelineLine2'),
+            document.getElementById('timelineLine3')
+        ],
+        resultAvatar: document.querySelector('.result-avatar')
     };
 
     // State
@@ -104,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Elaina's enchanting voice.`;
                 document.querySelector('.processing-title').textContent = `Elaina is singing...`;
                 document.querySelector('.result-info h3').textContent = `Elaina (Wandering Witch)`;
+                els.resultAvatar.style.backgroundImage = `url('avatar/avatar_elaina.png')`;
                 const subtitle = document.getElementById('logoSubtitle');
                 if (subtitle) subtitle.textContent = `イレイナ AI Cover`;
             } else if (state.selectedVoice === 'miku') {
@@ -125,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Nakano Miku's iconic voice.`;
                 document.querySelector('.processing-title').textContent = `Miku is singing...`;
                 document.querySelector('.result-info h3').textContent = `Nakano Miku (Quintessential Quintuplets)`;
+                els.resultAvatar.style.backgroundImage = `url('avatar/avatar_miku.png')`;
                 const subtitle = document.getElementById('logoSubtitle');
                 if (subtitle) subtitle.textContent = `中野三玖 AI Cover`;
             } else {
@@ -146,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Kurumi Tokisaki's enchanting voice.`;
                 document.querySelector('.processing-title').textContent = `Kurumi is singing...`;
                 document.querySelector('.result-info h3').textContent = `Kurumi Tokisaki`;
+                els.resultAvatar.style.backgroundImage = `url('avatar/avatar_kurumi.png')`;
                 const subtitle = document.getElementById('logoSubtitle');
                 if (subtitle) subtitle.textContent = `時崎狂三 AI Cover`;
             }
@@ -293,8 +316,23 @@ document.addEventListener('DOMContentLoaded', () => {
         els.inputCard.style.display = 'none';
         els.resultPanel.classList.remove('active');
         els.processingPanel.classList.add('active');
-        els.processingMsg.textContent = msg;
+        els.processingMainTitle.textContent = "🎙 AI ĐANG TỔNG HỢP GIỌNG NÓI";
+        els.processingSubTitle.textContent = msg;
         els.progressBar.style.width = '0%';
+        els.progressPercentageText.textContent = '0%';
+        
+        // Reset timeline
+        els.timelineSteps.forEach(el => el.classList.remove('active'));
+        els.timelineSteps[0].classList.add('active');
+        els.timelineLines.forEach(el => el.style.width = '0%');
+        
+        // Update Avatar based on selected voice
+        const avatarMap = {
+            'kurumi': 'avatar/avatar_kurumi.png',
+            'elaina': 'avatar/avatar_elaina.png',
+            'miku': 'avatar/avatar_miku.png'
+        };
+        els.processingAvatarImg.src = avatarMap[state.selectedVoice] || 'avatar/avatar_kurumi.png';
     }
 
     function showResult(blob, sourceText) {
@@ -324,20 +362,44 @@ document.addEventListener('DOMContentLoaded', () => {
         'encoding':    '🎧 Encoding MP3...',
     };
 
+    const TIPS = [
+        "💡 Mẹo: AI đang giữ nguyên cảm xúc bài hát, để bản cover chân thực nhất nhé!",
+        "🎵 Đừng đóng trình duyệt trong lúc render.",
+        "🎧 Nhâm nhi một tách trà trong lúc đợi nhé!",
+        "✨ AI đang phân tích từng nhịp điệu của bài hát...",
+        "🎙 Giọng của AI rất hợp với các bài hát nhẹ nhàng đấy!"
+    ];
+
     function pollJob(job_id, sourceText) {
         startTime = Date.now();
         const timerEl = document.getElementById('processingTimer');
-
-        // Reset bar
+        const etaEl = els.processingETA;
+        
         els.progressBar.style.width = '5%';
-        els.processingMsg.textContent = 'Job started...';
+        els.progressPercentageText.textContent = '5%';
+        els.processingSubTitle.textContent = 'Job started...';
         if (timerEl) timerEl.textContent = '00:00';
+        if (etaEl) etaEl.textContent = '--:--';
+        
+        // Setup tips cycling
+        let tipIndex = 0;
+        els.processingTip.textContent = TIPS[0];
+        const tipInterval = setInterval(() => {
+            tipIndex = (tipIndex + 1) % TIPS.length;
+            els.processingTip.style.opacity = '0';
+            setTimeout(() => {
+                els.processingTip.textContent = TIPS[tipIndex];
+                els.processingTip.style.opacity = '1';
+            }, 300);
+        }, 5000);
+        els.processingTip.style.transition = 'opacity 0.3s ease';
 
         state.progressInterval = setInterval(async () => {
-            // Elapsed clock (always updates)
+            // Elapsed clock
             const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
             const eMin = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
             const eSec = (elapsedSec % 60).toString().padStart(2, '0');
+            if (timerEl) timerEl.textContent = `${eMin}:${eSec}`;
 
             try {
                 const r = await fetch(state.serverUrl + '/job/' + job_id, {
@@ -351,64 +413,83 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (data.status === 'pending_approval') {
-                    els.processingMsg.textContent = '⏳ Đang chờ Admin phê duyệt yêu cầu trên điện thoại...';
+                    els.processingSubTitle.textContent = '⏳ Đang chờ Admin phê duyệt yêu cầu trên điện thoại...';
                     els.progressBar.style.width = '100%';
+                    els.progressPercentageText.textContent = 'Waiting';
                     els.progressBar.style.animation = 'pulse 1s infinite alternate';
-                    if (timerEl) timerEl.textContent = `${eMin}:${eSec} · Xin chờ...`;
-                    return; // Skip other logic until approved
+                    if (etaEl) etaEl.textContent = 'Chờ duyệt';
+                    return;
                 } else {
-                    // Xoa animation pulse neu da duyet
                     els.progressBar.style.animation = '';
                 }
                 
                 if (data.status === 'done') {
                     clearInterval(state.progressInterval);
-                    els.processingMsg.textContent = 'Downloading final MP3...';
+                    clearInterval(tipInterval);
+                    els.processingSubTitle.textContent = '✔ AI Cover hoàn tất. Đang chuẩn bị phát...';
+                    els.progressBar.style.width = '100%';
+                    els.progressBar.style.background = 'linear-gradient(90deg, #00f2fe, #4facfe)';
+                    els.progressPercentageText.textContent = '100%';
                     
-                    const dlRes = await fetch(state.serverUrl + '/download/' + job_id, {
-                        headers: { 'ngrok-skip-browser-warning': '1' }
-                    });
-                    if (!dlRes.ok) throw new Error("Download failed");
+                    els.timelineSteps.forEach(el => el.classList.add('active'));
+                    els.timelineLines.forEach(el => el.style.width = '100%');
                     
-                    const blob = await dlRes.blob();
-                    showResult(blob, sourceText);
-                    showToast('Conversion complete!', 'success');
-                    state.isProcessing = false;
+                    setTimeout(async () => {
+                        try {
+                            const dlRes = await fetch(state.serverUrl + '/download/' + job_id, {
+                                headers: { 'ngrok-skip-browser-warning': '1' }
+                            });
+                            if (!dlRes.ok) throw new Error("Download failed");
+                            
+                            const blob = await dlRes.blob();
+                            showResult(blob, sourceText);
+                            showToast('Conversion complete!', 'success');
+                            state.isProcessing = false;
+                        } catch (e) {
+                            showToast(e.message, 'error');
+                            resetUI();
+                        }
+                    }, 1000);
                     return;
                 }
 
-                // If processing, update progress
                 if (data.progress) {
                     const p = data.progress;
                     const label = STEP_LABELS[p.step] || 'Processing...';
-                    els.processingMsg.textContent = label;
+                    els.processingSubTitle.textContent = label;
 
                     if (p.pct > 0) {
                         els.progressBar.style.width = `${p.pct}%`;
+                        els.progressPercentageText.textContent = `${Math.floor(p.pct)}%`;
+                        
+                        // Update timeline
+                        els.timelineSteps[0].classList.add('active'); // always active
+                        if (p.pct > 25) { els.timelineLines[0].style.width = '100%'; els.timelineSteps[1].classList.add('active'); }
+                        else { els.timelineLines[0].style.width = `${(p.pct/25)*100}%`; }
+                        
+                        if (p.pct > 50) { els.timelineLines[1].style.width = '100%'; els.timelineSteps[2].classList.add('active'); }
+                        else if (p.pct > 25) { els.timelineLines[1].style.width = `${((p.pct-25)/25)*100}%`; }
+                        
+                        if (p.pct > 75) { els.timelineLines[2].style.width = '100%'; els.timelineSteps[3].classList.add('active'); }
+                        else if (p.pct > 50) { els.timelineLines[2].style.width = `${((p.pct-50)/25)*100}%`; }
                     }
 
-                    if (timerEl) {
-                        if (p.eta && p.step === 'separating') {
-                            const parts = p.eta.split(':').map(Number);
-                            const etaSec = (parts[0] || 0) * 60 + (parts[1] || 0);
-                            const finishTime = new Date(Date.now() + etaSec * 1000);
-                            const hh = finishTime.getHours().toString().padStart(2, '0');
-                            const mm = finishTime.getMinutes().toString().padStart(2, '0');
-                            timerEl.textContent = `${eMin}:${eSec} · Dự kiến xong lúc ${hh}:${mm}`;
-                        } else {
-                            timerEl.textContent = `${eMin}:${eSec}`;
-                        }
+                    if (p.eta && p.step === 'separating') {
+                        const parts = p.eta.split(':').map(Number);
+                        const etaSec = (parts[0] || 0) * 60 + (parts[1] || 0);
+                        etaEl.textContent = `${etaSec} giây`;
+                    } else if (p.eta) {
+                        etaEl.textContent = p.eta;
                     }
                 }
             } catch (err) {
                 console.error("Polling error:", err);
                 if (err.message && err.message !== "Failed to fetch") {
                     clearInterval(state.progressInterval);
+                    clearInterval(tipInterval);
                     showToast(err.message, 'error');
                     resetUI();
                     state.isProcessing = false;
-                } else {
-                    if (timerEl) timerEl.textContent = `${eMin}:${eSec}`;
                 }
             }
         }, 1000);
