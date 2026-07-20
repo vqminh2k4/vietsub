@@ -108,7 +108,13 @@
         }
         .clock-hand {
             transform-origin: 20px 20px;
-            transition: transform 0.1s cubic-bezier(0.4, 2.08, 0.55, 0.44); /* Tick effect */
+            transform-box: view-box;
+        }
+        #clockMinute {
+            animation: spin 3s linear infinite;
+        }
+        #clockHour {
+            animation: spin 36s linear infinite;
         }
         .logo-name {
             font-family: var(--font-heading);
