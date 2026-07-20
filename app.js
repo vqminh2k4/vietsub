@@ -532,4 +532,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         animate();
     }
+    
+    // Real-time clock for the logo
+    function initClock() {
+        const clockHour = document.getElementById('clockHour');
+        const clockMinute = document.getElementById('clockMinute');
+        if (!clockHour || !clockMinute) return;
+        
+        let totalSeconds = new Date().getSeconds();
+        let totalMinutes = new Date().getMinutes() + (totalSeconds / 60);
+        let totalHours = (new Date().getHours() % 12) + (totalMinutes / 60);
+
+        function updateClock() {
+            totalSeconds++;
+            totalMinutes = new Date().getMinutes() + (new Date().getSeconds() / 60);
+            totalHours = (new Date().getHours() % 12) + (totalMinutes / 60);
+            
+            // Minute hand acts like a second hand so it's visibly ticking
+            const secondDeg = totalSeconds * 6;
+            // Hour hand acts like a minute/hour hand smoothly
+            const hourDeg = totalHours * 30;
+            
+            clockMinute.style.transform = `rotate(${secondDeg}deg)`;
+            clockHour.style.transform = `rotate(${hourDeg}deg)`;
+        }
+        
+        setInterval(updateClock, 1000);
+        updateClock();
+    }
+    initClock();
 });
