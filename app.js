@@ -99,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Elaina's enchanting voice.`;
                 document.querySelector('.processing-title').textContent = `Elaina is singing...`;
                 document.querySelector('.result-info h3').textContent = `Elaina (Wandering Witch)`;
+                const subtitle = document.getElementById('logoSubtitle');
+                if (subtitle) subtitle.textContent = `イレイナ AI Cover`;
             } else if (state.selectedVoice === 'miku') {
                 document.body.style.backgroundImage = "url('miku/anh_nen.png')";
                 document.querySelector('.chibi-kurumi').src = "miku/anh_nho_backup.png";
@@ -115,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Nakano Miku's iconic voice.`;
                 document.querySelector('.processing-title').textContent = `Miku is singing...`;
                 document.querySelector('.result-info h3').textContent = `Nakano Miku (Quintessential Quintuplets)`;
+                const subtitle = document.getElementById('logoSubtitle');
+                if (subtitle) subtitle.textContent = `中野三玖 AI Cover`;
             } else {
                 document.body.style.backgroundImage = "url('img/anh_nen.png')";
                 document.querySelector('.chibi-kurumi').src = "img/anh_nho.png";
@@ -131,6 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.hero-desc').textContent = `Paste a YouTube link or upload your audio file. Our AI will transform the vocals into Kurumi Tokisaki's enchanting voice.`;
                 document.querySelector('.processing-title').textContent = `Kurumi is singing...`;
                 document.querySelector('.result-info h3').textContent = `Kurumi Tokisaki`;
+                const subtitle = document.getElementById('logoSubtitle');
+                if (subtitle) subtitle.textContent = `時崎狂三 AI Cover`;
             }
         });
     });
