@@ -125,6 +125,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Voice Playback
+    let currentCharacterAudio = null;
+    const kurumiVoices = ['kurumi', 'ara_ara', 'zafkiel'];
+    
+    function playCharacterVoice(voice) {
+        if (currentCharacterAudio) {
+            currentCharacterAudio.pause();
+            currentCharacterAudio.currentTime = 0;
+        }
+        
+        let voiceFile = voice;
+        if (voice === 'kurumi') {
+            voiceFile = kurumiVoices[Math.floor(Math.random() * kurumiVoices.length)];
+        }
+        
+        currentCharacterAudio = new Audio(`audio/${voiceFile}.mp3`);
+        currentCharacterAudio.play().catch(e => {
+            console.log("Cannot play voice (file missing or autoplay blocked):", e);
+        });
+    }
+
     // Voice Selection
     const voiceOptions = document.querySelectorAll('.voice-option');
     voiceOptions.forEach(opt => {
@@ -145,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         state.selectedVoice2 = null;
                     }
                 } else {
+                    playCharacterVoice(voice);
                     // Select new voice
                     if (state.selectedVoice && state.selectedVoice2) {
                         // Already 2 selected, replace the second one
@@ -165,6 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 // Solo Mode Logic
+                if (state.selectedVoice !== voice) {
+                    playCharacterVoice(voice);
+                }
                 voiceOptions.forEach(o => o.classList.remove('active'));
                 opt.classList.add('active');
                 state.selectedVoice = voice;
